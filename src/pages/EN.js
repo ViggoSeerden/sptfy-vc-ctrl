@@ -27,6 +27,8 @@ const LANGUAGE_MAP = {
   - 
 */
 
+console.log("wassup")
+
 function EN() {
 
   let installPrompt; //Variable to store the install action in
