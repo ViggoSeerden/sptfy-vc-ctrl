@@ -11,7 +11,7 @@ function App() {
       <Router>
         <Routes>
           {/* <Route exact path="/nl" element={<NL />} /> */}
-          <Route exact path="/" element={<EN />} />
+          <Route exact path="/sptfy-vc-ctrl" element={<EN />} />
           {/* <Route exact path="/Test" element={<Test />} /> */}
         </Routes>
         {/* <TabBar></TabBar> */}

@@ -1,15 +1,27 @@
 .SpotifyBtn {
-    width: 61%;
+    width: 50vmin;
+    max-width: 200px;
+    height: 70px;
     margin-left: auto;
     margin-right: auto;
     font-weight: 550;
-    font-size: 16px;
+    font-size: 18px;
     border-radius: 500px;
     background-color: #1ed760;
-    padding: 14px 32px;
-    border-width: 0;
+    border: none;
     color: white;
+    margin-top: 10%;
     display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.SpotifyBtn:hover {
+    filter: brightness(60%);
+}
+
+.SpotifyBtn:active {
+    filter: brightness(20%);
 }
 
 .SpotifyImg {

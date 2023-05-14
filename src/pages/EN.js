@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import logo from './photos/logo2.png'
 import spotify from './photos/spotify.png'
 import './css/broadway.css'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faCircleArrowDown, } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faCircleArrowDown, faMicrophone, faMicrophoneSlash, faLanguage, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import NoSleep from 'nosleep.js';
 import Popup from 'reactjs-popup';
@@ -45,8 +45,8 @@ function EN() {
   const authEndpoint = "https://accounts.spotify.com/authorize/?"
 
   const clientId = "c12a19b4c59744a797e50a4c058b753e"
-  //const redirectUri = "https://i491216.hera.fhict.nl"
-  const redirectUri = "https://localhost:3000"
+  //const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
+  const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
   const scopes = [
     'user-read-currently-playing',
     'user-read-playback-state',
@@ -55,13 +55,18 @@ function EN() {
 
   let [token, setToken] = useState()
   let [currSong, setCurrSong] = useState();
+  let [lyrics, setLyrics] = useState();
 
   const [time, setTime] = useState();
   const [running, setRunning] = useState();
   const [duration, setDuration] = useState();
 
+  const [progressWidth, setProgressWidth] = useState(0);
+
   const [shuffle, setShuffle] = useState();
-  const [repeat, setRepeat] = useState();
+  const [songrepeat, setRepeat] = useState();
+
+  const [isListening, setListening] = useState(false);
 
   const [language, setLanguage] = useState("en-US");
   const [volume, setVolumeIndicator] = useState();
@@ -104,13 +109,17 @@ function EN() {
       setToken(_token)
       getCurrentSong(_token)
       document.body.style.transition = "linear 1s"
-      SpeechRecognition.startListening({
-        continuous: true,
-        language: 'en-US'
-      })
+      // SpeechRecognition.startListening({
+      //   continuous: true,
+      //   language: 'en-US'
+      // })
     }
   })
 
+  useEffect(() => {
+    const newProgressWidth = (time / duration) * 100;
+    setProgressWidth(newProgressWidth);
+  }, [time, duration]);
 
   const getCurrentSong = async (token) => {
     await fetch("https://api.spotify.com/v1/me/player", {
@@ -122,11 +131,12 @@ function EN() {
     })
       .then((response) => response.json())
       .then(data => {
-        console.log(data);
+        // console.log(data);
         setCurrSong({
           item: data.item,
         });
         setTime(data.progress_ms)
+        GetLyrics(data)
         setDuration(data.item.duration_ms + 100)
         setRunning(data.is_playing)
         setShuffle(data.shuffle_state)
@@ -146,6 +156,7 @@ function EN() {
         document.body.style.animation = "none";
         document.body.style.backgroundPosition = "center";
         document.body.style.backgroundAttachment = "fixed";
+        document.getElementById('bgimagediv').classList.add("pagecontent");
       })
       .catch(error => console.error('Error fetching current song:', error))
   }
@@ -179,7 +190,7 @@ function EN() {
       }
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
       })
       .catch(error => console.error('Error changing song:', error));
 
@@ -196,7 +207,7 @@ function EN() {
       }
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
       })
       .catch(error => console.error('Error changing song:', error));
 
@@ -214,7 +225,7 @@ function EN() {
       },
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
       })
       .catch(error => console.error('Error changing song:', error));
   }
@@ -228,7 +239,7 @@ function EN() {
     else if (command === true) {
       mode = "track"
     }
-    console.log(mode)
+    // console.log(mode)
     await fetch("https://api.spotify.com/v1/me/player/repeat?state=" + mode, {
       method: 'PUT',
       headers: {
@@ -237,7 +248,7 @@ function EN() {
       }
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
       })
       .catch(error => console.error('Error changing song:', error));
   }
@@ -415,10 +426,12 @@ function EN() {
       command: ['(switch to) (wissel naar) ' + language, '*' + language + '*'],
       callback: () => {
         setLanguage(LANGUAGE_MAP[language])
-        SpeechRecognition.startListening({
-          continuous: true,
-          language: LANGUAGE_MAP[language]
-        })
+        if (isListening) {
+          SpeechRecognition.startListening({
+            continuous: true,
+            language: LANGUAGE_MAP[language]
+          })
+        }
       },
       matchInterim: true
     };
@@ -443,6 +456,23 @@ function EN() {
     document.getElementById("lastcommand").innerHTML = "";
   }
 
+  function setMicrophone(value) {
+    if (value == "Off") {
+      SpeechRecognition.abortListening();
+      setListening(false);
+    }
+    else {
+      SpeechRecognition.startListening({
+        continuous: true,
+        language: LANGUAGE_MAP[language]
+      });
+      setListening(true);
+    }
+  }
+
+  function logOut() {
+    window.location.reload();
+  }
 
   if (!SpeechRecognition.browserSupportsSpeechRecognition) {
     return (<div>
@@ -468,151 +498,302 @@ function EN() {
     });
   }
 
+  // a key map of allowed keys
+  var allowedKeys = {
+    37: 'left',
+    38: 'up',
+    39: 'right',
+    40: 'down',
+    65: 'a',
+    66: 'b'
+  };
+
+  // the 'official' Konami Code sequence
+  var konamiCode = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
+
+  // a variable to remember the 'position' the user has reached so far.
+  var konamiCodePosition = 0;
+
+  // add keydown event listener
+  document.addEventListener('keydown', function (e) {
+    // get the value of the key code from the key map
+    var key = allowedKeys[e.keyCode];
+    // get the value of the required key from the konami code
+    var requiredKey = konamiCode[konamiCodePosition];
+
+    // compare the key with the required key
+    if (key == requiredKey && !token) {
+
+      // move to the next key in the konami code sequence
+      konamiCodePosition++;
+
+      // if the last key is reached, activate cheats
+      if (konamiCodePosition == konamiCode.length && !token) {
+        activateCheats();
+        konamiCodePosition = 0;
+      }
+    } else {
+      konamiCodePosition = 0;
+    }
+  });
+
+  function GetLyrics(song) {
+    fetch("https://spotify-lyric-api.herokuapp.com/?url=" + song.item.external_urls.spotify, {
+      method: 'GET',
+    })
+      .then((response) => response.json())
+      .then(data => {
+        // console.log(data);
+        let fullLyrics = "";
+        for (let i = 0; i < data.lines.length; i++) {
+          fullLyrics = fullLyrics + data.lines[i].words + "\n";
+        }
+        // console.log(fullLyrics)
+        setLyrics(fullLyrics)
+      })
+  }
+
+  function activateCheats() {
+    document.getElementById("logo").hidden = false;
+    document.getElementById("title").hidden = true;
+    document.getElementById("desc").hidden = true;
+    document.getElementById("note").hidden = true;
+    document.getElementById("viggo").hidden = true;
+    document.getElementById("login").innerHTML = "LOG IN WITH SPOTIFY";
+    document.getElementById("og").innerHTML = "Made By: <br/> Steijn Ploegmakers & <br/> Viggo Seerden";
+    document.body.style.backgroundImage = "linear-gradient(-45deg, #000, #000, #000, #000, #000, #000, #98843d, #000, #000, #000, #000, #000, #000, #000)";
+    document.body.style.backgroundSize = "400% 400%";
+    document.body.style.animation = "gradient 15s infinite";
+  }
+
   return (
-    <div className="pagecontent" id="bgimagediv">
+    <div id="bgimagediv">
       <header className="App-header">
-        <img src={logo} alt="Logo" className='logo' /><br />
+
         {!token && (
+          // <div className='nologincontent'>
+          //   <img src={logo} alt="Logo" className='logo' /><br />
+          //   <a
+          //     className="btn btn--loginApp-link"
+          //     href={`${authEndpoint}client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
+          //   >
+          //     <button className="SpotifyBtn">
+          //       <img className="SpotifyImg" src={spotify} alt="Spotify Logo" width='40' />
+          //       <p>LOG IN WITH SPOTIFY</p>
+          //     </button>
+          //   </a>
+          //   <br />
+          //   <br />
+          //   <p className='credits'>Originally made by <br /> Steijn Ploegmakers & Viggo Seerden</p>
+          //   <br/>
+          //   <p className='credits'>Remade by Viggo Seerden</p>
+          // </div>
           <div className='nologincontent'>
+            <img src={logo} alt="Logo" id="logo" className='logo' hidden /><br />
+            <p className='title' id="title">Broadway</p>
+            <p className='desc' id="desc">Spotify Voice Controller</p>
             <a
               className="btn btn--loginApp-link"
               href={`${authEndpoint}client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
             >
               <button className="SpotifyBtn">
                 <img className="SpotifyImg" src={spotify} alt="Spotify Logo" width='40' />
-                <p>LOG IN WITH SPOTIFY</p>
+                <p id="login">Log In</p>
               </button>
             </a>
             <br />
             <br />
-            <p className='credits'>Made By: <br /> Steijn Ploegmakers & <br /> Viggo Seerden</p>
+            <p className='credits' id="og">Originally made by <br /> Steijn Ploegmakers & Viggo Seerden</p>
+            <br />
+            <p className='credits' id="viggo">Remade by Viggo Seerden</p>
+            <br />
+            <p className='credits' id="note">NOTE: Before logging in, you must already have a song playing on Spotify.</p>
           </div>
         )}
         {token && (<div className='container'>
-          {currSong ? <>
-            <img src={currSong.item.album.images[0].url} alt="Album Cover" width="25%" height="25%" className="albumcover" />
-            <h3>{currSong.item.name}</h3>
-            <p>Artist: {currSong.item.artists[0].name}</p>
-            <p>Album: {currSong.item.album.name}</p>
-            <br />
+          {currSong ?
             <div>
-              <button className="controlbtn" onClick={previousSong}><FontAwesomeIcon className="fa-2x" icon={faBackward} color="white" /></button>
-              {running ?
-                <button className="controlbtn" onClick={pauseSong}><FontAwesomeIcon className="fa-2x" icon={faPause} color="white" /></button>
-                :
-                <button className="controlbtn" onClick={playSong}><FontAwesomeIcon className="fa-2x" icon={faPlay} color="white" /></button>
-              }
-              <button className="controlbtn" onClick={nextSong}><FontAwesomeIcon className="fa-2x" icon={faForward} color="white" /></button>
-            </div>
-            <br />
-            <div>
-              {repeat ?
-                <button id="repeat" className="controlbtn" onClick={() => toggleRepeat(false)}><FontAwesomeIcon className="fa-2x" icon={faRepeat} color="#1BD760" /></button>
-                :
-                <button id="repeat" className="controlbtn" onClick={() => toggleRepeat(true)}><FontAwesomeIcon className="fa-2x" icon={faRepeat} color="white" /></button>
-              }
-
-              {shuffle ?
-                <button id="shuffle" className="controlbtn" onClick={() => toggleShuffle(false)}><FontAwesomeIcon className="fa-2x" icon={faShuffle} color="#1BD760" /></button>
-                :
-                <button id="shuffle" className="controlbtn" onClick={() => toggleShuffle(true)}><FontAwesomeIcon className="fa-2x" icon={faShuffle} color="white" /></button>
-              }
-
-            </div>
-            <br />
-            <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:</span>
-            <span>{("0" + Math.floor((time / 1000) % 60)).slice(-2)}</span>
-            <br />
-            <br />
-            {language === "en-US" ?
-              <>
-                <p>Current Language: English</p>
+              <div className='album'>
+                <img src={currSong.item.album.images[0].url} alt="Album Cover" className="albumcover" />
+              </div>
+              <div className='controls'>
+                <div className='info'>
+                  <p className='songtitle'>{currSong.item.name}</p>
+                  <p>{currSong.item.artists[0].name}</p>
+                  <p>{currSong.item.album.name}</p>
+                </div>
                 <br />
-                <p>Current Volume: {volume}%</p>
-                <Popup
-                  trigger={<button className="popupbtn" id="popupbtn"> Command List </button>}
-                  modal
-                  nested
-                >
-                  {close => (
-                    <div className="modal">
-                      <button className="close" id="closebtn" onClick={close}>
-                        &times;
-                      </button>
-                      <div className="header"> Command List </div>
-                      <div className="content">
-                        - Play/Start/Continue: Start or resume playback <br />
-                        - Pause/Stop: Pause playback <br />
-                        - Next/Skip: Play next song in queue <br />
-                        - Previous/Back: Play previous song in queue <br />
-                        - Shuffle On/Enable Shuffle: Turn on shuffle <br />
-                        - Shuffle Off/Disable Shuffle: Turn off shuffle <br />
-                        - Repeat On/Enable Repeat: Turn on repeat <br />
-                        - Repeat Off/Disable Repeat: Turn off repeat <br />
-                        - Volume + a number from 1-100: Set audio volume <br />
-                        - Dutch: Switch text and command language to Dutch <br />
-                        - Logout: Disconnect Spotify/Return to homepage <br />
-                      </div>
-                    </div>
-                  )}
-                </Popup>
-              </>
-              :
-              <>
-                <p>Huidige Taal: Nederlands</p>
-                <br />
-                <p>Huidig Volume: {volume}%</p>
-                <Popup
-                  trigger={<button className="popupbtn" id="popupbtn"> Commando Lijst </button>}
-                  modal
-                  nested
-                >
-                  {close => (
-                    <div className="modal">
-                      <button className="close" id="closebtn" onClick={close}>
-                        &times;
-                      </button>
-                      <div className="header"> Lijst van Commando's </div>
-                      <div className="content">
-                        - Speel/Start: Begin of ga verder met spelen <br />
-                        - Pauzeer/Stop: Pauzeer audio <br />
-                        - Volgende: Speel volgend nummer <br />
-                        - Vorige/Terug: Speel vorig nummer <br />
-                        - Shuffle Aan: Zet shuffle aan <br />
-                        - Shuffle Uit: Zet shuffle uit <br />
-                        - Herhalen aan: Zet herhalen aan <br />
-                        - Herhalen uit: Zet herhalen uit <br />
-                        - Volume + nummer van 1-100: Audio volume instellen <br />
-                        - Engels: Wissel tekst en commando taal naar Engels <br />
-                        - Log uit: Uitloggen van Spotify/Terug naar de homepagina <br />
-                      </div>
-                    </div>
-                  )}
-                </Popup>
-              </>
-            }
+                <div className="audio-progress-bar-container">
+                  <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:{("0" + Math.floor((time / 1000) % 60)).slice(-2)}</span>
+                  <div className="audio-progress-bar">
+                    <div className="progress-bar-background" />
+                    <div className="progress-bar" style={{ width: `${progressWidth}%` }} />
+                  </div>
+                  <span>{("0" + Math.floor((duration / 60000) % 60)).slice(-2)}:{("0" + Math.floor((duration / 1000) % 60)).slice(-2)}</span>
+                </div>
+                <div>
+                  {shuffle ?
+                    <button id="shuffle" className="controlbtn" title="Disable Shuffle" onClick={() => toggleShuffle(false)}><FontAwesomeIcon icon={faShuffle} color="#1BD760" /></button>
+                    :
+                    <button id="shuffle" className="controlbtn" title="Enable Shuffle" onClick={() => toggleShuffle(true)}><FontAwesomeIcon icon={faShuffle} color="white" /></button>
+                  }
 
-            <br />
-            <p id="lastcommand"></p>
-            {/* {running ?
+                  <button className="controlbtn" title="Previous Song" onClick={previousSong}><FontAwesomeIcon icon={faBackward} color="white" /></button>
+                  {running ?
+                    <button className="controlbtn" title="Pause" onClick={pauseSong}><FontAwesomeIcon icon={faPause} color="white" /></button>
+                    :
+                    <button className="controlbtn" title="Play" onClick={playSong}><FontAwesomeIcon icon={faPlay} color="white" /></button>
+                  }
+                  <button className="controlbtn" title="Next Song" onClick={nextSong}><FontAwesomeIcon icon={faForward} color="white" /></button>
+
+                  {songrepeat ?
+                    <button id="repeat" className="controlbtn" title="Disable Repeat" onClick={() => toggleRepeat(false)}><FontAwesomeIcon icon={faRepeat} color="#1BD760" /></button>
+                    :
+                    <button id="repeat" className="controlbtn" title="Enable Repeat" onClick={() => toggleRepeat(true)}><FontAwesomeIcon icon={faRepeat} color="white" /></button>
+                  }
+                </div>
+                <br />
+                <div className='miscsettings'>
+                  <span className='seperator'>
+                    <FontAwesomeIcon className='miscoption' icon={faLanguage} />
+                    <select className='select' title="Change Language" onChange={(val) => setLanguage(val.target.value)}>
+                      <option value="en-US">English</option>
+                      <option value="nl-NL">Nederlands</option>
+                    </select>
+                  </span>
+                  {window.screen.width < 300 &&
+                    <br />
+                  }
+                  <span className='seperator'>
+                    <FontAwesomeIcon className='miscoption' icon={faVolumeHigh} />
+                    <select className='select' title="Set Volume Level" onChange={(val) => setVolume(val.target.value)}>
+                      <option value="100">100</option>
+                      <option value="90">90</option>
+                      <option value="80">80</option>
+                      <option value="70">70</option>
+                      <option value="60">60</option>
+                      <option value="50">50</option>
+                      <option value="40">40</option>
+                      <option value="30">30</option>
+                      <option value="20">20</option>
+                      <option value="10">10</option>
+                      <option value="0">0</option>
+                    </select>
+                  </span>
+                  <span className='seperator'>
+                    <FontAwesomeIcon className='miscoption' icon={faMicrophone} />
+                    <select className='select' title="Toggle Microphone" onChange={(val) => setMicrophone(val.target.value)}>
+                      <option value="Off">Off</option>
+                      <option value="On">On</option>
+                    </select>
+                  </span>
+                </div>
+                {language === "en-US" ?
+                  <>
+                  <Popup trigger={<button className="popupbtn" title="View Lyrics" id="popupbtn">Lyrics</button>} modal nested>
+                    {close => (
+                      <div className="modal">
+                        <button className="close" id="closebtn" onClick={close}>
+                          &times;
+                        </button>
+                        <div className="header"> Lyrics </div>
+                        <div className="lyricscontent">
+                          <p style={{whiteSpace: "pre-wrap"}}>{lyrics}</p>
+                        </div>
+                      </div>
+                    )}
+                  </Popup>
+                  <span className='smallseperator' />
+                    <Popup trigger={<button className="popupbtn" id="popupbtn">Commands</button>} modal nested>
+                      {close => (
+                        <div className="modal">
+                          <button className="close" id="closebtn" onClick={close}>
+                            &times;
+                          </button>
+                          <div className="header"> Voice Commands </div>
+                          <div className="commandcontent">
+                            - Play/Start/Continue: Start or resume playback <br />
+                            - Pause/Stop: Pause playback <br />
+                            - Next/Skip: Play next song in queue <br />
+                            - Previous/Back: Play previous song in queue <br />
+                            - Shuffle On/Enable Shuffle: Turn on shuffle <br />
+                            - Shuffle Off/Disable Shuffle: Turn off shuffle <br />
+                            - Repeat On/Enable Repeat: Turn on repeat <br />
+                            - Repeat Off/Disable Repeat: Turn off repeat <br />
+                            - Volume + a number from 1-100: Set audio volume <br />
+                            - Dutch: Switch text and command language to Dutch <br />
+                            - Logout: Disconnect Spotify/Return to homepage <br />
+                          </div>
+                        </div>
+                      )}
+                    </Popup>
+                    <span className='smallseperator' />
+                    <button className='popupbtn' onClick={logOut}>Log Out</button>
+                  </>
+                  :
+                  <>
+                  <Popup trigger={<button className="popupbtn" title="View Lyrics" id="popupbtn">Song Tekst</button>} modal nested>
+                    {close => (
+                      <div className="modal">
+                        <button className="close" id="closebtn" onClick={close}>
+                          &times;
+                        </button>
+                        <div className="header"> Song Tekst </div>
+                        <div className="lyricscontent">
+                          <p style={{whiteSpace: "pre-wrap"}}>{lyrics}</p>
+                        </div>
+                      </div>
+                    )}
+                  </Popup>
+                  <span className='smallseperator' />
+                    <Popup trigger={<button className="popupbtn" id="popupbtn"> Commando's </button>} modal nested>
+                      {close => (
+                        <div className="modal">
+                          <button className="close" id="closebtn" onClick={close}>
+                            &times;
+                          </button>
+                          <div className="header"> Stem Commando's </div>
+                          <div className="commandcontent">
+                            - Speel/Start: Begin of ga verder met spelen <br />
+                            - Pauzeer/Stop: Pauzeer audio <br />
+                            - Volgende: Speel volgend nummer <br />
+                            - Vorige/Terug: Speel vorig nummer <br />
+                            - Shuffle Aan: Zet shuffle aan <br />
+                            - Shuffle Uit: Zet shuffle uit <br />
+                            - Herhalen aan: Zet herhalen aan <br />
+                            - Herhalen uit: Zet herhalen uit <br />
+                            - Volume + nummer van 1-100: Audio volume instellen <br />
+                            - Engels: Wissel tekst en commando taal naar Engels <br />
+                            - Log uit: Uitloggen van Spotify/Terug naar de homepagina <br />
+                          </div>
+                        </div>
+                      )}
+                    </Popup>
+                    <span className='smallseperator' />
+                    <button className='popupbtn' onClick={logOut}>Uitloggen</button>
+                  </>
+                }
+
+                <br />
+                <p id="lastcommand"></p>
+                {/* {running ?
               <p>is running</p>
               :
               <p>is not running</p>} */}
-            {/* <p>{transcript}</p> */}
+                {/* <p>{transcript}</p> */}
 
-          </>
+              </div>
+
+            </div>
             :
             <>
               <h4>Oops, something went wrong.</h4>
-              <p>Make sure that you have opened Spotify on your device and have started a playlist! Refresh this page to try logging in again.</p>
+              <p>Make sure that you have opened Spotify on this device and have a song already playing. Please refresh this page to try logging in again.</p>
             </>}
-
         </div>
         )}
-        <button hidden id="installbtn" className='installbtn' onClick={installPWA}><FontAwesomeIcon icon={faCircleArrowDown} /> INSTALL PWA</button>
+        {/* <button hidden id="installbtn" className='installbtn' onClick={installPWA}><FontAwesomeIcon icon={faCircleArrowDown} /> INSTALL PWA</button> */}
       </header>
-      <br />
-      <br />
     </div>
   );
 }
