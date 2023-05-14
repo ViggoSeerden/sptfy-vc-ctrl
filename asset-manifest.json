@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/sptfy-vc-ctrl/static/css/main.21b8e1ef.css",
-    "main.js": "/sptfy-vc-ctrl/static/js/main.24796268.js",
+    "main.js": "/sptfy-vc-ctrl/static/js/main.f017d86d.js",
     "static/js/787.28cb0dcd.chunk.js": "/sptfy-vc-ctrl/static/js/787.28cb0dcd.chunk.js",
     "static/media/logo2.png": "/sptfy-vc-ctrl/static/media/logo2.4b99ca8d5c6dd05a28e4.png",
     "static/media/Roboto-Thin.ttf": "/sptfy-vc-ctrl/static/media/Roboto-Thin.a732a12eb07742232407.ttf",
@@ -10,11 +10,11 @@
     "service-worker.js": "/sptfy-vc-ctrl/service-worker.js",
     "index.html": "/sptfy-vc-ctrl/index.html",
     "main.21b8e1ef.css.map": "/sptfy-vc-ctrl/static/css/main.21b8e1ef.css.map",
-    "main.24796268.js.map": "/sptfy-vc-ctrl/static/js/main.24796268.js.map",
+    "main.f017d86d.js.map": "/sptfy-vc-ctrl/static/js/main.f017d86d.js.map",
     "787.28cb0dcd.chunk.js.map": "/sptfy-vc-ctrl/static/js/787.28cb0dcd.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.21b8e1ef.css",
-    "static/js/main.24796268.js"
+    "static/js/main.f017d86d.js"
   ]
 }
