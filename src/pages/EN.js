@@ -45,8 +45,8 @@ function EN() {
   const authEndpoint = "https://accounts.spotify.com/authorize/?"
 
   const clientId = "c12a19b4c59744a797e50a4c058b753e"
-  //const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
-  const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
+  const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
+  //const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
   const scopes = [
     'user-read-currently-playing',
     'user-read-playback-state',
