@@ -18,8 +18,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/sptfy-vc-ctrl",
+  "scope": "/sptfy-vc-ctrl",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff",
