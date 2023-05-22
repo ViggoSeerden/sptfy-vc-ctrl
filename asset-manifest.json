@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/sptfy-vc-ctrl/static/css/main.9847f76a.css",
-    "main.js": "/sptfy-vc-ctrl/static/js/main.296d1bd4.js",
+    "main.js": "/sptfy-vc-ctrl/static/js/main.87c12c39.js",
     "static/js/787.11a92364.chunk.js": "/sptfy-vc-ctrl/static/js/787.11a92364.chunk.js",
     "static/media/logo2.png": "/sptfy-vc-ctrl/static/media/logo2.4b99ca8d5c6dd05a28e4.png",
     "static/media/Roboto-Thin.ttf": "/sptfy-vc-ctrl/static/media/Roboto-Thin.a732a12eb07742232407.ttf",
@@ -10,11 +10,11 @@
     "service-worker.js": "/sptfy-vc-ctrl/service-worker.js",
     "index.html": "/sptfy-vc-ctrl/index.html",
     "main.9847f76a.css.map": "/sptfy-vc-ctrl/static/css/main.9847f76a.css.map",
-    "main.296d1bd4.js.map": "/sptfy-vc-ctrl/static/js/main.296d1bd4.js.map",
+    "main.87c12c39.js.map": "/sptfy-vc-ctrl/static/js/main.87c12c39.js.map",
     "787.11a92364.chunk.js.map": "/sptfy-vc-ctrl/static/js/787.11a92364.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.9847f76a.css",
-    "static/js/main.296d1bd4.js"
+    "static/js/main.87c12c39.js"
   ]
 }
