@@ -1,3 +1,23 @@
+@media screen and ( max-height: 500px ) and (min-width: 600px) {
+ .SpotifyBtn {
+    font-size: 11vmin;
+    margin-bottom: 5vh;
+ }
+}
+
+@media screen and ( max-height: 300px ) and (min-width: 600px) {
+ .SpotifyBtn {
+    max-height: 40px;
+    font-size: 11vmin;
+    margin-bottom: 15px;
+ }
+
+ .SpotifyImg {
+    max-height: 70%;
+    max-width: 20%;
+ }
+}
+
 .SpotifyBtn {
     width: 50vmin;
     max-width: 200px;
@@ -15,7 +35,6 @@
     justify-content: center;
     align-items: center;
 }
-
 .SpotifyBtn:hover {
     filter: brightness(60%);
 }

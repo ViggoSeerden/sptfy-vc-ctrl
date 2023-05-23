@@ -20,6 +20,7 @@
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
     "react-speech-recognition": "^3.10.0",
+    "react-swipeable": "^7.0.0",
     "reactjs-popup": "^2.0.5",
     "use-sound": "^4.0.1",
     "web-push": "^3.5.0",
@@ -35,7 +36,8 @@
     "workbox-range-requests": "^6.5.4",
     "workbox-routing": "^6.5.4",
     "workbox-strategies": "^6.5.4",
-    "workbox-streams": "^6.5.4"
+    "workbox-streams": "^6.5.4",
+    "workerize-loader": "^2.0.2"
   },
   "scripts": {
     "start": "react-scripts start",

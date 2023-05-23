@@ -1,12 +1,15 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import React from 'react'
 import logo from './photos/logo2.png'
 import spotify from './photos/spotify.png'
 import './css/broadway.css'
+// import { start, stop } from './timerworker';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faCircleArrowDown, faMicrophone, faMicrophoneSlash, faLanguage, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faMicrophone, faLanguage, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import NoSleep from 'nosleep.js';
 import Popup from 'reactjs-popup';
+import { useSwipeable } from 'react-swipeable';
 // import englishcommands from './audio/englishcommands.mp3'
 // import dutchcommands from './audio/dutchcommands.mp3'
 
@@ -18,28 +21,58 @@ const LANGUAGE_MAP = {
   'Dutch': 'nl-NL'
 }
 
-/*
-  TO DO:
-  - Command list
-  - Conversations with app
-  - Warning user about upcoming siren wielding vehicles
-  - Traffic Information and similar shit?????????
-  - 
-*/
-
-console.log("wassup")
-
 function EN() {
+  // let installPrompt; //Variable to store the install action in
+  // useEffect(() => {
+  //   window.addEventListener("beforeinstallprompt", (event) => {
+  //     event.preventDefault(); //Prevent the event (this prevents the default bar to show up)
+  //     installPrompt = event; //Install event is stored for triggering it later
 
-  let installPrompt; //Variable to store the install action in
-  useEffect(() => {
-    window.addEventListener("beforeinstallprompt", (event) => {
-      event.preventDefault(); //Prevent the event (this prevents the default bar to show up)
-      installPrompt = event; //Install event is stored for triggering it later
+  //     document.getElementById("installbtn").hidden = false;
+  //   });
+  // });
 
-      document.getElementById("installbtn").hidden = false;
-    });
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      document.getElementById("album").classList.toggle("left")
+      nextSong();
+      document.getElementById("album").style.opacity = 0;
+      document.getElementById("bgimg").style.opacity = 0;
+      setTimeout(doSwipeLeftAnim, 1000);
+    },
+    onSwipedRight: () => {
+      document.getElementById("album").classList.toggle("right")
+      previousSong();
+      document.getElementById("album").style.opacity = 0;
+      document.getElementById("bgimg").style.opacity = 0;
+      setTimeout(doSwipeRightAnim, 1000);
+    },
+    onSwipedUp: () => {
+      document.getElementById("lyricbtn").click();
+    },
+    delta: 50,
+    preventDefaultTouchmoveEvent: true
   });
+
+  function doSwipeLeftAnim() {
+    document.getElementById("album").classList.toggle("left")
+    document.getElementById("album").classList.toggle("right")
+    setTimeout(function () {
+      document.getElementById("album").classList.toggle("right");
+      document.getElementById("album").style.opacity = 100;
+      document.getElementById("bgimg").style.opacity = 100;
+    }, 500)
+  }
+
+  function doSwipeRightAnim() {
+    document.getElementById("album").classList.toggle("right")
+    document.getElementById("album").classList.toggle("left")
+    setTimeout(function () {
+      document.getElementById("album").classList.toggle("left");
+      document.getElementById("album").style.opacity = 100;
+      document.getElementById("bgimg").style.opacity = 100;
+    }, 500)
+  }
 
   // var dutchaudio = new Audio(dutchcommands);
   // var englishaudio = new Audio(englishcommands);
@@ -47,8 +80,9 @@ function EN() {
   const authEndpoint = "https://accounts.spotify.com/authorize/?"
 
   const clientId = "c12a19b4c59744a797e50a4c058b753e"
-  const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
-  //const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
+  //const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
+  const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
+
   const scopes = [
     'user-read-currently-playing',
     'user-read-playback-state',
@@ -57,10 +91,12 @@ function EN() {
 
   let [token, setToken] = useState()
   let [currSong, setCurrSong] = useState();
-  let [lyrics, setLyrics] = useState();
+  let [lyrics, setLyrics] = useState([]);
+  let [synced, setSynced] = useState(false);
+  let [lyricsfound, setFound] = useState(false);
 
-  const [time, setTime] = useState();
-  const [running, setRunning] = useState();
+  const [time, setTime] = useState(0);
+  const [running, setRunning] = useState(false);
   const [duration, setDuration] = useState();
 
   const [progressWidth, setProgressWidth] = useState(0);
@@ -71,27 +107,38 @@ function EN() {
   const [isListening, setListening] = useState(false);
 
   const [language, setLanguage] = useState("en-US");
-  const [volume, setVolumeIndicator] = useState();
+  const [microphone, setMicrophoneP] = useState("Off");
+  const [volume, setVolumeP] = useState(100);
+  const [bg, setBG] = useState("normal");
 
   useEffect(() => {
-    let interval;
+    let intervalId;
+    let startTime = performance.now() - time;
+
     if (running) {
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime + 10);
+      intervalId = setInterval(() => {
+        const elapsedTime = performance.now() - startTime;
+        setTime(Math.floor(elapsedTime));
+
+        if (elapsedTime >= duration) {
+          clearInterval(intervalId);
+          document.getElementById("album").style.opacity = 0;
+          document.getElementById("bgimg").style.opacity = 0;
+          setTimeout(function () {
+            getCurrentSong(token)
+          }, 300)
+          setTimeout(function () {
+            document.getElementById("album").style.opacity = 100;
+            document.getElementById("bgimg").style.opacity = 100;
+          }, 500)
+        }
       }, 10);
-
-    } else if (!running) {
-      clearInterval(interval);
+    } else {
+      clearInterval(intervalId);
     }
 
-    return () => clearInterval(interval);
-  }, [running]);
-
-  useEffect(() => {
-    if (time >= duration) {
-      getCurrentSong(token);
-    }
-  })
+    return () => clearInterval(intervalId);
+  }, [running, duration]);
 
   useEffect(() => {
     const hash = window.location.hash
@@ -109,7 +156,26 @@ function EN() {
     let _token = hash.access_token
     if (_token) {
       setToken(_token)
+      if (localStorage.getItem("lang")) {
+        setLanguage(localStorage.getItem("lang"))
+      }
+      else {
+        localStorage.setItem("lang", "en-US")
+      }
+      if (localStorage.getItem("vol")) {
+        setVolumeP(localStorage.getItem("vol"))
+      }
+      else {
+        localStorage.setItem("vol", 100)
+      }
+      if (localStorage.getItem("mic")) {
+        setMicrophoneP(localStorage.getItem("mic"))
+      }
+      else {
+        localStorage.setItem("mic", "Off")
+      }
       getCurrentSong(_token)
+      InitBG()
       document.body.style.transition = "linear 1s"
       // SpeechRecognition.startListening({
       //   continuous: true,
@@ -118,12 +184,33 @@ function EN() {
     }
   })
 
+  function InitBG() {
+    document.body.style.backgroundImage = "url(" + currSong?.item?.album?.images[0].url + ")";
+    document.body.style.backgroundSize = "cover";
+    document.body.style.animation = "none";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundAttachment = "fixed";
+  }
+
   useEffect(() => {
     const newProgressWidth = (time / duration) * 100;
     setProgressWidth(newProgressWidth);
   }, [time, duration]);
 
+
+  useEffect(() => {
+    if (token) {
+      if (bg === 'normal') {
+        document.body.style.backgroundImage = `url(${currSong?.item?.album?.images[0]?.url})`;
+      } else if (bg === 'vinyl') {
+        document.body.style.backgroundImage = 'radial-gradient(rgb(49, 49, 49), black)';
+      }
+    }
+  }, [bg, token, currSong]);
+
+
   const getCurrentSong = async (token) => {
+    const currentBG = bg;
     await fetch("https://api.spotify.com/v1/me/player", {
       method: 'GET',
       headers: {
@@ -133,16 +220,14 @@ function EN() {
     })
       .then((response) => response.json())
       .then(data => {
-        // console.log(data);
+        //console.log(data);
         setCurrSong({
           item: data.item,
         });
         setTime(data.progress_ms)
-        GetLyrics(data)
-        setDuration(data.item.duration_ms + 100)
+        setDuration(data.item.duration_ms + 500)
         setRunning(data.is_playing)
         setShuffle(data.shuffle_state)
-        setVolumeIndicator(data.device.volume_percent)
         if (data.replay_state === "off") {
           setRepeat(false)
         }
@@ -153,15 +238,31 @@ function EN() {
           toggleRepeat(false);
         }
 
-        document.body.style.backgroundImage = "url(" + data.item.album.images[0].url + ")";
-        document.body.style.backgroundSize = "cover";
-        document.body.style.animation = "none";
-        document.body.style.backgroundPosition = "center";
-        document.body.style.backgroundAttachment = "fixed";
-        document.getElementById('bgimagediv').classList.add("pagecontent");
+        getLyrics(data)
+        if (currentBG === "normal") {
+          document.body.style.backgroundImage = "url(" + data.item.album.images[0].url + ")";
+        } else if (currentBG === "vinyl") {
+          document.body.style.backgroundImage = "radial-gradient(rgb(49, 49, 49), black)";
+        }
+
+        if (document.getElementById("album").classList.contains("fadein")) {
+          document.getElementById("album").classList.remove("fadein")
+        }
       })
       .catch(error => console.error('Error fetching current song:', error))
   }
+
+  useEffect(() => {
+    if (lyrics.length > 0) {
+      const updatedLyrics = lyrics.map((line) => {
+        if (line.startTimeMs <= time && line.startTimeMs != 0) {
+          return { ...line, highlighted: true };
+        }
+        return { ...line, highlighted: false };
+      });
+      setLyrics(updatedLyrics);
+    }
+  }, [time]);
 
   const playSong = () => {
     fetch("https://api.spotify.com/v1/me/player/play", {
@@ -197,7 +298,15 @@ function EN() {
       .catch(error => console.error('Error changing song:', error));
 
     await sleep(500)
-    getCurrentSong(token)
+    document.getElementById("album").style.opacity = 0;
+    document.getElementById("bgimg").style.opacity = 0;
+    setTimeout(function () {
+      getCurrentSong(token)
+    }, 300)
+    setTimeout(function () {
+      document.getElementById("album").style.opacity = 100;
+      document.getElementById("bgimg").style.opacity = 100;
+    }, 500)
   }
 
   const previousSong = async () => {
@@ -214,7 +323,15 @@ function EN() {
       .catch(error => console.error('Error changing song:', error));
 
     await sleep(500)
-    getCurrentSong(token)
+    document.getElementById("album").style.opacity = 0;
+    document.getElementById("bgimg").style.opacity = 0;
+    setTimeout(function () {
+      getCurrentSong(token)
+    }, 300)
+    setTimeout(function () {
+      document.getElementById("album").style.opacity = 100;
+      document.getElementById("bgimg").style.opacity = 100;
+    }, 500)
   }
 
   const toggleShuffle = async (mode) => {
@@ -262,7 +379,7 @@ function EN() {
         Authorization: "Bearer " + token
       }
     })
-    setVolumeIndicator(number.replace("%", ""));
+    localStorage.setItem("vol", number)
   }
 
   async function sleep(ms) {
@@ -428,6 +545,7 @@ function EN() {
       command: ['(switch to) (wissel naar) ' + language, '*' + language + '*'],
       callback: () => {
         setLanguage(LANGUAGE_MAP[language])
+        localStorage.setItem("lang", LANGUAGE_MAP[language])
         if (isListening) {
           SpeechRecognition.startListening({
             continuous: true,
@@ -440,7 +558,7 @@ function EN() {
     return [playCommand, pauseCommand, nextCommand, previousCommand, shuffleOnCommand, shuffleOffCommand,
       repeatOnCommand, repeatOffCommand, volumeCommand, logoutCommand, /*listCommand,*/ listCommandBtn, languageCommand];
   });
-  const { transcript, isMicrophoneAvailable, resetTranscript } = useSpeechRecognition({ commands })
+  const { isMicrophoneAvailable, resetTranscript } = useSpeechRecognition({ commands })
 
   // if (transcript.length > 0) {
   //   console.log(transcript)
@@ -459,7 +577,7 @@ function EN() {
   }
 
   function setMicrophone(value) {
-    if (value == "Off") {
+    if (value === "Off") {
       SpeechRecognition.abortListening();
       setListening(false);
     }
@@ -470,6 +588,7 @@ function EN() {
       });
       setListening(true);
     }
+    localStorage.setItem("mic", value)
   }
 
   function logOut() {
@@ -487,18 +606,18 @@ function EN() {
     </div>)
   }
 
-  function installPWA() {
-    //Recognize the install variable from before?
-    installPrompt.prompt();
-    document.getElementById("installbtn").hidden = true;
-    installPrompt.userChoice.then((choiceResult) => {
-      document.getElementById("installbtn").hidden = true;
-      if (choiceResult.outcome !== "accepted") {
-        document.getElementById("installbtn").hidden = false;
-      }
-      installPrompt = null;
-    });
-  }
+  // function installPWA() {
+  //   //Recognize the install variable from before?
+  //   installPrompt.prompt();
+  //   document.getElementById("installbtn").hidden = true;
+  //   installPrompt.userChoice.then((choiceResult) => {
+  //     document.getElementById("installbtn").hidden = true;
+  //     if (choiceResult.outcome !== "accepted") {
+  //       document.getElementById("installbtn").hidden = false;
+  //     }
+  //     installPrompt = null;
+  //   });
+  // }
 
   // a key map of allowed keys
   var allowedKeys = {
@@ -524,13 +643,13 @@ function EN() {
     var requiredKey = konamiCode[konamiCodePosition];
 
     // compare the key with the required key
-    if (key == requiredKey && !token) {
+    if (key === requiredKey && !token) {
 
       // move to the next key in the konami code sequence
       konamiCodePosition++;
 
       // if the last key is reached, activate cheats
-      if (konamiCodePosition == konamiCode.length && !token) {
+      if (konamiCodePosition === konamiCode.length && !token) {
         activateCheats();
         konamiCodePosition = 0;
       }
@@ -539,20 +658,46 @@ function EN() {
     }
   });
 
-  function GetLyrics(song) {
-    fetch("https://spotify-lyric-api.herokuapp.com/?url=" + song.item.external_urls.spotify, {
-      method: 'GET',
-    })
+  function getLyrics(song) {
+    fetch(
+      'https://spotify-lyric-api.herokuapp.com/?url=' +
+      song.item.external_urls.spotify,
+      {
+        method: 'GET',
+      }
+    )
       .then((response) => response.json())
-      .then(data => {
-        // console.log(data);
-        let fullLyrics = "";
-        for (let i = 0; i < data.lines.length; i++) {
-          fullLyrics = fullLyrics + data.lines[i].words + "\n";
+      .then((data) => {
+        //console.log(data)
+        if (data.error === false) {
+          setFound(true)
+          if (data.syncType === "LINE_SYNCED") {
+            setSynced(true)
+          }
+          else {
+            setSynced(false)
+          }
+          const syncedLyrics = data.lines.map((line) => ({
+            ...line,
+            highlighted: data.syncType === 'LINE_SYNCED' ? false : true,
+          }));
+          setLyrics(syncedLyrics);
+        } else {
+          setLyrics([]);
+          setFound(false)
+          setSynced(false)
         }
-        // console.log(fullLyrics)
-        setLyrics(fullLyrics)
-      })
+      });
+  }
+
+  function disable() {
+    document.getElementsByClassName("refreshbtn")[0].disabled = true;
+    let og = document.getElementsByClassName("refreshbtn")[0].innerHTML
+    document.getElementsByClassName("refreshbtn")[0].innerHTML = "...";
+    setTimeout(function () {
+      document.getElementsByClassName("refreshbtn")[0].disabled = false
+      document.getElementsByClassName("refreshbtn")[0].innerHTML = og
+    }, 5000)
   }
 
   function activateCheats() {
@@ -566,6 +711,29 @@ function EN() {
     document.body.style.backgroundImage = "linear-gradient(-45deg, #000, #000, #000, #000, #000, #000, #98843d, #000, #000, #000, #000, #000, #000, #000)";
     document.body.style.backgroundSize = "400% 400%";
     document.body.style.animation = "gradient 15s infinite";
+  }
+
+  function changeLanguage(lang) {
+    setLanguage(lang);
+    localStorage.setItem("lang", lang)
+  }
+
+  // const formatTime = (ms) => {
+  //   const minutes = Math.floor((ms / 60000) % 60);
+  //   const seconds = Math.floor((ms / 1000) % 60);
+  //   return `${("0" + minutes).slice(-2)}:${("0" + seconds).slice(-2)}`;
+  // };
+
+  function toggleBG() {
+    setBG((prevBG) => {
+      if (prevBG === "normal") {
+        document.body.style.backgroundImage = "radial-gradient(rgb(49, 49, 49), black)";
+        return "vinyl";
+      } else if (prevBG === "vinyl") {
+        document.body.style.backgroundImage = "url(" + currSong.item.album.images[0].url + ")";
+        return "normal";
+      }
+    });
   }
 
   return (
@@ -592,207 +760,285 @@ function EN() {
           // </div>
           <div className='nologincontent'>
             <img src={logo} alt="Logo" id="logo" className='logo' hidden /><br />
-            <p className='title' id="title">Broadway</p>
-            <p className='desc' id="desc">Spotify Voice Controller</p>
+            <p className='title fadein' id="title">Broadway</p>
+            <p className='desc fadein' id="desc">Spotify Voice Controller</p>
             <a
-              className="btn btn--loginApp-link"
+              className="btn btn--loginApp-link fadein"
               href={`${authEndpoint}client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
             >
-              <button className="SpotifyBtn">
-                <img className="SpotifyImg" src={spotify} alt="Spotify Logo" width='40' />
+              <button className="SpotifyBtn fadein">
+                <img className="SpotifyImg" src={spotify} alt="Spotify Logo" title="Log in with your Spotify account" width='40' />
                 <p id="login">Log In</p>
               </button>
             </a>
             <br />
             <br />
-            <p className='credits' id="og">Originally made by <br /> Steijn Ploegmakers & Viggo Seerden</p>
+            <p className='credits fadein' id="og">Originally made by <br /> Steijn Ploegmakers & Viggo Seerden</p>
             <br />
-            <p className='credits' id="viggo">Remade by Viggo Seerden</p>
+            <p className='credits fadein' id="viggo">Remade by Viggo Seerden</p>
             <br />
-            <p className='credits' id="note">NOTE: Before logging in, you must already have a song playing on Spotify.</p>
+            <p className='credits fadein' id="note">NOTE: Before logging in, you must already have a song playing on Spotify.</p>
           </div>
         )}
-        {token && (<div className='container'>
-          {currSong ?
-            <div>
-              <div className='album'>
-                <img src={currSong.item.album.images[0].url} alt="Album Cover" className="albumcover" />
-              </div>
-              <div className='controls'>
-                <div className='info'>
-                  <p className='songtitle'>{currSong.item.name}</p>
-                  <p>{currSong.item.artists[0].name}</p>
-                  <p>{currSong.item.album.name}</p>
-                </div>
-                <br />
-                <div className="audio-progress-bar-container">
-                  <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:{("0" + Math.floor((time / 1000) % 60)).slice(-2)}</span>
-                  <div className="audio-progress-bar">
-                    <div className="progress-bar-background" />
-                    <div className="progress-bar" style={{ width: `${progressWidth}%` }} />
-                  </div>
-                  <span>{("0" + Math.floor((duration / 60000) % 60)).slice(-2)}:{("0" + Math.floor((duration / 1000) % 60)).slice(-2)}</span>
-                </div>
+        {token && (
+          <div className='content'>
+            <div className='container'>
+              {currSong ?
                 <div>
-                  {shuffle ?
-                    <button id="shuffle" className="controlbtn" title="Disable Shuffle" onClick={() => toggleShuffle(false)}><FontAwesomeIcon icon={faShuffle} color="#1BD760" /></button>
+                  {bg === "normal" ?
+                    <div id='bgimg' className='bgimg' hidden>
+                      <img hidden src={currSong.item.album.images[0].url} alt="oops" className='bgalbum'></img>
+                    </div>
                     :
-                    <button id="shuffle" className="controlbtn" title="Enable Shuffle" onClick={() => toggleShuffle(true)}><FontAwesomeIcon icon={faShuffle} color="white" /></button>
+                    running ?
+                      <div id='bgimg' className='bgimg'>
+                        <img src={currSong.item.album.images[0].url} alt="oops" className='bgalbum'></img>
+                      </div>
+                      :
+                      <div id='bgimg' className='bgimg' style={{ animationPlayState: 'paused' }}>
+                        <img src={currSong.item.album.images[0].url} alt="oops" className='bgalbum'></img>
+                      </div>
                   }
+                  <div className='album fadein' title="Switch Background" id="album" {...handlers} onClick={toggleBG}>
+                    <img src={currSong.item.album.images[0].url} alt="Album Cover" id="albumcover" className="albumcover" />
+                  </div>
 
-                  <button className="controlbtn" title="Previous Song" onClick={previousSong}><FontAwesomeIcon icon={faBackward} color="white" /></button>
-                  {running ?
-                    <button className="controlbtn" title="Pause" onClick={pauseSong}><FontAwesomeIcon icon={faPause} color="white" /></button>
-                    :
-                    <button className="controlbtn" title="Play" onClick={playSong}><FontAwesomeIcon icon={faPlay} color="white" /></button>
-                  }
-                  <button className="controlbtn" title="Next Song" onClick={nextSong}><FontAwesomeIcon icon={faForward} color="white" /></button>
-
-                  {songrepeat ?
-                    <button id="repeat" className="controlbtn" title="Disable Repeat" onClick={() => toggleRepeat(false)}><FontAwesomeIcon icon={faRepeat} color="#1BD760" /></button>
-                    :
-                    <button id="repeat" className="controlbtn" title="Enable Repeat" onClick={() => toggleRepeat(true)}><FontAwesomeIcon icon={faRepeat} color="white" /></button>
-                  }
-                </div>
-                <br />
-                <div className='miscsettings'>
-                  <span className='seperator'>
-                    <FontAwesomeIcon className='miscoption' icon={faLanguage} />
-                    <select className='select' title="Change Language" onChange={(val) => setLanguage(val.target.value)}>
-                      <option value="en-US">English</option>
-                      <option value="nl-NL">Nederlands</option>
-                    </select>
-                  </span>
-                  {window.screen.width < 300 &&
+                  <div className='controls fadein'>
+                    <div className='info'>
+                      <p className='songtitle'>{currSong.item.name}</p>
+                      <p className='artist'>{currSong.item.artists[0].name}</p>
+                      <p>{currSong.item.album.name}</p>
+                    </div>
                     <br />
-                  }
-                  <span className='seperator'>
-                    <FontAwesomeIcon className='miscoption' icon={faVolumeHigh} />
-                    <select className='select' title="Set Volume Level" onChange={(val) => setVolume(val.target.value)}>
-                      <option value="100">100</option>
-                      <option value="90">90</option>
-                      <option value="80">80</option>
-                      <option value="70">70</option>
-                      <option value="60">60</option>
-                      <option value="50">50</option>
-                      <option value="40">40</option>
-                      <option value="30">30</option>
-                      <option value="20">20</option>
-                      <option value="10">10</option>
-                      <option value="0">0</option>
-                    </select>
-                  </span>
-                  <span className='seperator'>
-                    <FontAwesomeIcon className='miscoption' icon={faMicrophone} />
-                    <select className='select' title="Toggle Microphone" onChange={(val) => setMicrophone(val.target.value)}>
-                      <option value="Off">Off</option>
-                      <option value="On">On</option>
-                    </select>
-                  </span>
-                </div>
-                {language === "en-US" ?
-                  <>
-                  <Popup trigger={<button className="popupbtn" title="View Lyrics" id="popupbtn">Lyrics</button>} modal nested>
-                    {close => (
-                      <div className="modal">
-                        <button className="close" id="closebtn" onClick={close}>
-                          &times;
-                        </button>
-                        <div className="header"> Lyrics </div>
-                        <div className="lyricscontent">
-                          <p style={{whiteSpace: "pre-wrap"}}>{lyrics}</p>
-                        </div>
+                    <div className="audio-progress-bar-container">
+                      <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:{("0" + Math.floor((time / 1000) % 60)).slice(-2)}</span>
+                      <div className="audio-progress-bar">
+                        <div className="progress-bar-background" />
+                        <div className="progress-bar" style={{ width: `${progressWidth}%` }} />
                       </div>
-                    )}
-                  </Popup>
-                  <span className='smallseperator' />
-                    <Popup trigger={<button className="popupbtn" id="popupbtn">Commands</button>} modal nested>
-                      {close => (
-                        <div className="modal">
-                          <button className="close" id="closebtn" onClick={close}>
-                            &times;
-                          </button>
-                          <div className="header"> Voice Commands </div>
-                          <div className="commandcontent">
-                            - Play/Start/Continue: Start or resume playback <br />
-                            - Pause/Stop: Pause playback <br />
-                            - Next/Skip: Play next song in queue <br />
-                            - Previous/Back: Play previous song in queue <br />
-                            - Shuffle On/Enable Shuffle: Turn on shuffle <br />
-                            - Shuffle Off/Disable Shuffle: Turn off shuffle <br />
-                            - Repeat On/Enable Repeat: Turn on repeat <br />
-                            - Repeat Off/Disable Repeat: Turn off repeat <br />
-                            - Volume + a number from 1-100: Set audio volume <br />
-                            - Dutch: Switch text and command language to Dutch <br />
-                            - Logout: Disconnect Spotify/Return to homepage <br />
-                          </div>
-                        </div>
-                      )}
-                    </Popup>
-                    <span className='smallseperator' />
-                    <button className='popupbtn' onClick={logOut}>Log Out</button>
-                  </>
-                  :
-                  <>
-                  <Popup trigger={<button className="popupbtn" title="View Lyrics" id="popupbtn">Song Tekst</button>} modal nested>
-                    {close => (
-                      <div className="modal">
-                        <button className="close" id="closebtn" onClick={close}>
-                          &times;
-                        </button>
-                        <div className="header"> Song Tekst </div>
-                        <div className="lyricscontent">
-                          <p style={{whiteSpace: "pre-wrap"}}>{lyrics}</p>
-                        </div>
-                      </div>
-                    )}
-                  </Popup>
-                  <span className='smallseperator' />
-                    <Popup trigger={<button className="popupbtn" id="popupbtn"> Commando's </button>} modal nested>
-                      {close => (
-                        <div className="modal">
-                          <button className="close" id="closebtn" onClick={close}>
-                            &times;
-                          </button>
-                          <div className="header"> Stem Commando's </div>
-                          <div className="commandcontent">
-                            - Speel/Start: Begin of ga verder met spelen <br />
-                            - Pauzeer/Stop: Pauzeer audio <br />
-                            - Volgende: Speel volgend nummer <br />
-                            - Vorige/Terug: Speel vorig nummer <br />
-                            - Shuffle Aan: Zet shuffle aan <br />
-                            - Shuffle Uit: Zet shuffle uit <br />
-                            - Herhalen aan: Zet herhalen aan <br />
-                            - Herhalen uit: Zet herhalen uit <br />
-                            - Volume + nummer van 1-100: Audio volume instellen <br />
-                            - Engels: Wissel tekst en commando taal naar Engels <br />
-                            - Log uit: Uitloggen van Spotify/Terug naar de homepagina <br />
-                          </div>
-                        </div>
-                      )}
-                    </Popup>
-                    <span className='smallseperator' />
-                    <button className='popupbtn' onClick={logOut}>Uitloggen</button>
-                  </>
-                }
+                      <span>{("0" + Math.floor((duration / 60000) % 60)).slice(-2)}:{("0" + Math.floor(((duration - 500) / 1000) % 60)).slice(-2)}</span>
+                    </div>
+                    <div>
+                      {shuffle ?
+                        <button id="shuffle" className="controlbtn" title="Disable Shuffle" onClick={() => toggleShuffle(false)}><FontAwesomeIcon icon={faShuffle} color="#1BD760" /></button>
+                        :
+                        <button id="shuffle" className="controlbtn" title="Enable Shuffle" onClick={() => toggleShuffle(true)}><FontAwesomeIcon icon={faShuffle} color="white" /></button>
+                      }
 
-                <br />
-                <p id="lastcommand"></p>
-                {/* {running ?
+                      <button className="controlbtn" title="Previous Song" onClick={previousSong}><FontAwesomeIcon icon={faBackward} color="white" /></button>
+                      {running ?
+                        <button className="controlbtn" title="Pause" onClick={pauseSong}><FontAwesomeIcon icon={faPause} color="white" /></button>
+                        :
+                        <button className="controlbtn" title="Play" onClick={playSong}><FontAwesomeIcon icon={faPlay} color="white" /></button>
+                      }
+                      <button className="controlbtn" title="Next Song" onClick={nextSong}><FontAwesomeIcon icon={faForward} color="white" /></button>
+
+                      {songrepeat ?
+                        <button id="repeat" className="controlbtn" title="Disable Repeat" onClick={() => toggleRepeat(false)}><FontAwesomeIcon icon={faRepeat} color="#1BD760" /></button>
+                        :
+                        <button id="repeat" className="controlbtn" title="Enable Repeat" onClick={() => toggleRepeat(true)}><FontAwesomeIcon icon={faRepeat} color="white" /></button>
+                      }
+                    </div>
+                    <br />
+                    <div className='miscsettings'>
+                      <span className='seperator'>
+                        <FontAwesomeIcon className='miscoption' icon={faLanguage} />
+                        <select className='select' defaultValue={language} title="Change Language" onChange={(val) => { changeLanguage(val.target.value) }}>
+                          <option value="en-US">English</option>
+                          <option value="nl-NL">Nederlands</option>
+                        </select>
+                      </span>
+                      {window.screen.width < 300 &&
+                        <br />
+                      }
+                      <span className='seperator'>
+                        <FontAwesomeIcon className='miscoption' icon={faVolumeHigh} />
+                        <select className='select' defaultValue={volume} title="Set Volume Level" onChange={(val) => setVolume(val.target.value)}>
+                          <option value="100">100</option>
+                          <option value="90">90</option>
+                          <option value="80">80</option>
+                          <option value="70">70</option>
+                          <option value="60">60</option>
+                          <option value="50">50</option>
+                          <option value="40">40</option>
+                          <option value="30">30</option>
+                          <option value="20">20</option>
+                          <option value="10">10</option>
+                          <option value="0">0</option>
+                        </select>
+                      </span>
+                      <span className='seperator'>
+                        <FontAwesomeIcon className='miscoption' icon={faMicrophone} />
+                        <select className='select' defaultValue={microphone} title="Toggle Microphone" onChange={(val) => setMicrophone(val.target.value)}>
+                          <option value="Off">Off</option>
+                          <option value="On">On</option>
+                        </select>
+                      </span>
+                    </div>
+                    {language === "en-US" ?
+                      <>
+                        <Popup trigger={<button className="popupbtn" title="View Lyrics" id="lyricbtn">Lyrics</button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              {lyricsfound ?
+                                synced ?
+                                  <div className="header">Lyrics (Synced)<br />
+                                    <button title="Refresh Lyrics (sometimes they don't update lol)"
+                                      className="refreshbtn" onClick={() => { getLyrics(currSong); disable() }}>Refresh</button>
+                                  </div>
+                                  :
+                                  <div className="header">Lyrics (Not Synced)<br />
+                                    <span><button title="Refresh Lyrics (sometimes they don't update lol)"
+                                      className="refreshbtn" onClick={() => { getLyrics(currSong); disable() }}>Refresh</button></span>
+                                  </div>
+
+                                :
+                                <div className="header">No lyrics were found for this song.<br />
+                                  <span><button title="Refresh Lyrics (sometimes they don't update lol)"
+                                    className="refreshbtn" onClick={() => { getLyrics(currSong); disable() }}>Refresh</button></span>
+                                </div>
+                              }
+                              <div className="lyricscontent">
+                                <p>
+                                  {lyrics.map((line, index) => (
+                                    <React.Fragment key={index}>
+                                      <span
+                                        style={{ color: line.highlighted ? '#1ed760' : 'inherit' }}
+                                      >
+                                        {line.words}
+                                      </span>
+                                      <br /> {/* Add line break after each line */}
+                                    </React.Fragment>
+                                  ))}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
+                        <span className='smallseperator' />
+                        <Popup trigger={<button title="View All Voice Commands" className="popupbtn" id="popupbtn">Commands</button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              <div className="header"> Voice Commands </div>
+                              <div className="commandcontent">
+                                - Play/Start/Continue: Start or resume playback <br />
+                                - Pause/Stop: Pause playback <br />
+                                - Next/Skip: Play next song in queue <br />
+                                - Previous/Back: Play previous song in queue <br />
+                                - Shuffle On/Enable Shuffle: Turn on shuffle <br />
+                                - Shuffle Off/Disable Shuffle: Turn off shuffle <br />
+                                - Repeat On/Enable Repeat: Turn on repeat <br />
+                                - Repeat Off/Disable Repeat: Turn off repeat <br />
+                                - Volume + a number from 1-100: Set audio volume <br />
+                                - Dutch: Switch text and command language to Dutch <br />
+                                - Logout: Disconnect Spotify/Return to homepage <br />
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
+                        <span className='smallseperator' />
+                        <button className='popupbtn' title="Log Out With Spotify" onClick={logOut}>Log Out</button>
+                      </>
+                      :
+                      <>
+                        <Popup trigger={<button className="popupbtn" title="Song Teksten Bekijken" id="lyricbtn">Song Tekst</button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              {lyricsfound ?
+                                synced ?
+                                  <div className="header">Song Tekst (Gesynchroniseerd)<br />
+                                    <button title="Song Teksten Verversen (soms worden ze niet geupdate lol)" className="refreshbtn"
+                                      onClick={() => { getLyrics(currSong); disable() }}>Verversen</button>
+                                  </div>
+                                  :
+                                  <div className="header">Song Tekst (Niet Gesynchroniseerd)<br />
+                                    <span><button title="Song Teksten Verversen (soms worden ze niet geupdate lol)" className="refreshbtn"
+                                      onClick={() => { getLyrics(currSong); disable() }}>Verversen</button></span>
+                                  </div>
+
+                                :
+                                <div className="header">Geen teksten gevonden voor dit lied.<br />
+                                  <span><button title="Song Teksten Verversen (soms worden ze niet geupdate lol)" className="refreshbtn"
+                                    onClick={() => { getLyrics(currSong); disable() }}>Verversen</button></span>
+                                </div>
+                              }
+                              <div className="lyricscontent">
+                                <p>
+                                  {lyrics.map((line, index) => (
+                                    <React.Fragment key={index}>
+                                      <span
+                                        style={{ color: line.highlighted ? '#1ed760' : 'inherit' }}
+                                      >
+                                        {line.words}
+                                      </span>
+                                      <br /> {/* Add line break after each line */}
+                                    </React.Fragment>
+                                  ))}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
+                        <span className='smallseperator' />
+                        <Popup trigger={<button title="Alle Stem Commando's Bekijken" className="popupbtn" id="popupbtn"> Commando's </button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              <div className="header"> Stem Commando's </div>
+                              <div className="commandcontent">
+                                - Speel/Start: Begin of ga verder met spelen <br />
+                                - Pauzeer/Stop: Pauzeer audio <br />
+                                - Volgende: Speel volgend nummer <br />
+                                - Vorige/Terug: Speel vorig nummer <br />
+                                - Shuffle Aan: Zet shuffle aan <br />
+                                - Shuffle Uit: Zet shuffle uit <br />
+                                - Herhalen aan: Zet herhalen aan <br />
+                                - Herhalen uit: Zet herhalen uit <br />
+                                - Volume + nummer van 1-100: Audio volume instellen <br />
+                                - Engels: Wissel tekst en commando taal naar Engels <br />
+                                - Log uit: Uitloggen van Spotify/Terug naar de homepagina <br />
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
+                        <span className='smallseperator' />
+                        <button className='popupbtn' title="Uitloggen Met Spotify" onClick={logOut}>Uitloggen</button>
+                      </>
+                    }
+
+                    <br />
+                    <p id="lastcommand"></p>
+                    {/* {running ?
               <p>is running</p>
               :
               <p>is not running</p>} */}
-                {/* <p>{transcript}</p> */}
+                    {/* <p>{transcript}</p> */}
 
-              </div>
+                  </div>
 
+                </div>
+                :
+                <div className='errorcontent'>
+                  <h2>Oops, something went wrong.</h2>
+                  <p>Make sure that you have opened Spotify on this device and have a song already playing. <br /> <br />
+                    Please refresh this page to try logging in again. <br /> <br />
+                    If this problem persists, please try again later.
+                  </p>
+
+                </div>}
             </div>
-            :
-            <>
-              <h4>Oops, something went wrong.</h4>
-              <p>Make sure that you have opened Spotify on this device and have a song already playing. Please refresh this page to try logging in again.</p>
-            </>}
-        </div>
+          </div>
         )}
         {/* <button hidden id="installbtn" className='installbtn' onClick={installPWA}><FontAwesomeIcon icon={faCircleArrowDown} /> INSTALL PWA</button> */}
       </header>

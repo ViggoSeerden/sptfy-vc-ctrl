@@ -1,6 +1,6 @@
 {
   "short_name": "Broadway",
-  "name": "Broadway: Spotify player for in your car!",
+  "name": "Broadway: Spotify Voice Controller",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +18,9 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
-  "scope": "/",
+  "id": "/sptfy-vc-ctrl/",
+  "start_url": "/sptfy-vc-ctrl/",
+  "scope": "/sptfy-vc-ctrl/",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff",

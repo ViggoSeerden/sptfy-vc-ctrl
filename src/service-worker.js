@@ -6,6 +6,7 @@ const cacheName = "broadwayCache";
 //Just take into account that the "files" below are request-url's and not filenames perse. So for your root of your website yous should include "./" and if you use my site (or another plain HTML-site) also "index.html". If you use a server-side language and have friendly url's that could be something like "news/this-is-a-newsarticle/".
 const appFiles = [
   "manifest.json",
+  "index.html",
   "./",
   "logo192.png",
   "logo512.png",
