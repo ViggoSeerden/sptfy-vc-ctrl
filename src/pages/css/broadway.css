@@ -2,6 +2,7 @@
  .SpotifyBtn {
     font-size: 11vmin;
     margin-bottom: 5vh;
+    margin-top: -10vh;
  }
 }
 
@@ -15,6 +16,18 @@
  .SpotifyImg {
     max-height: 70%;
     max-width: 20%;
+ }
+}
+
+@media screen and ( max-height: 500px ) and (max-width: 500px) {
+ .SpotifyBtn {
+    max-height: 40px;
+    margin-bottom: -5vh;
+ }
+
+ .SpotifyImg {
+    max-height: 70%;
+    max-width: 15%;
  }
 }
 

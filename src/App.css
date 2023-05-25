@@ -116,7 +116,7 @@
 
 @media screen and (max-height: 750px) {
   #album {
-    height: 60vh;
+    height: 57vh;
   }
 }
 
@@ -157,11 +157,9 @@
     font-size: 1vmin;
     justify-content: right;
     text-align: left;
-  }
-
-  .nologincontent {
     font-size: 0.01vmin;
     justify-content: center;
+    margin-left: 3%;
   }
 
   .title {
@@ -170,7 +168,7 @@
 
   .desc {
     margin-top: -5vh;
-    margin-bottom: -5vh;
+    margin-bottom: -15vh;
   }
 
   #bgimg {
@@ -216,13 +214,56 @@
 
   .desc {
     margin-top: -5vh;
-    margin-bottom: -5vh;
+    margin-bottom: -15vh;
   }
 }
 
 @media screen and (max-height: 500px) and (max-width: 500px ){
   #album {
     height: 32vh;
+  }
+
+  .desc {
+    margin-bottom: -5vh;
+    margin-top: -5vh;
+  }
+
+  .title {
+    margin-bottom: 1vh;
+    margin-top: -4vh;
+  }
+
+  .credits {
+    margin-inline: 10vw;
+  }
+
+  .nologincontent {
+    margin-left: 4%;
+  }
+}
+
+@media screen and (max-height: 500px) and (min-height: 499px) and (max-width: 654px ){
+  .controls {
+    top: 11vh;
+  }
+
+  .desc {
+    margin-top: -5vh;
+    margin-bottom: -15vh;
+  }
+}
+
+@media screen and (min-width: 1200px){
+  .modal {
+    margin-left: 67vw;
+  }
+
+  .modal>.commandcontent {
+    max-width: 25vw;
+  }
+  
+  .modal>.lyricscontent {
+    max-width: 25vw;
   }
 }
 
@@ -238,15 +279,35 @@
   padding-bottom: 30px;
 }
 
-.info p {
+.info a {
   font-size: medium;
   overflow: hidden;
+  color: white;
   display: -webkit-box;
   -webkit-line-clamp: 1;
   /* number of lines to show */
   line-clamp: 1;
   -webkit-box-orient: vertical;
   height: 20px;
+}
+
+.info a:hover {
+  text-decoration: underline;
+}
+
+.spotifycredit {
+  margin-top: 1vh;
+  color: lightgray;
+  font-size: small;
+  z-index: -50;
+}
+
+.spotifycredit a {
+  color: lightgray;
+}
+.spotifycredit a:hover {
+  color: white;
+  text-decoration: underline;
 }
 
 .info .songtitle {
@@ -259,16 +320,34 @@
   padding-bottom: 4px;
 }
 
-.info .artist {
-  margin-bottom: 5px;
-}
-
 .info {
   align-items: left;
   text-align: left;
-  margin-left: 3%;
+  margin-left: 5%;
   text-shadow: -1px -1px 1px #000000b5, 1px -1px 1px #000000b5, -1px 1px 1px #000000b5, 1px 1px 1px #000000b5;
   margin-right: 5%;
+}
+
+.info input {
+  border-radius: 10px;
+  color: white;
+  background-color: #000000a9;
+  padding-inline: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-left: 0.5vw;
+  width: 92%;
+  margin-bottom: 4px;
+  border: solid 1px white
+}
+
+.info input::placeholder {
+  color: rgb(150, 150, 150);
+}
+
+.info .correct {
+  color: rgb(150, 150, 150);
+  border: #1ed760 solid 1px;
 }
 
 .titlebtn:hover {
@@ -427,6 +506,10 @@ body {
   vertical-align: middle;
 }
 
+.select:disabled {
+  filter: brightness(50%);
+}
+
 .seperator {
   padding-inline: 4px;
 }
@@ -502,9 +585,12 @@ body {
 
 .modal>.commandcontent {
   width: 100%;
-  max-height: 20vh;
-  padding-right: 10px;
+  max-height: 60vh;
+  padding-right: 15px;
   text-align: left;
+  overflow-y: scroll;
+  font-family: 'Roboto';  
+  font-size: larger;
 }
 
 .modal>.lyricscontent {
@@ -534,7 +620,7 @@ body {
 }
 
 .popupbtn {
-  margin-top: 20px;
+  margin-top: 10px;
   border: none;
   border-radius: 300px;
   background-color: rgba(0, 0, 0, 0.6);
@@ -544,6 +630,10 @@ body {
   width: 100px;
   color: white;
   font-weight: bold;
+}
+
+.popupbtn:disabled {
+  filter: brightness(30%);
 }
 
 .refreshbtn {
