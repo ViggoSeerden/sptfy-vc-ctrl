@@ -217,24 +217,27 @@ function EN() {
 
         if (elapsedTime >= duration) {
           if (songrepeat === false) {
-            clearInterval(intervalId);
-            document.getElementById("album").style.opacity = 0;
-            document.getElementById("bgimg").style.opacity = 0;
             setTimeout(function () {
-              getCurrentSong(token)
-            }, 300)
-            setTimeout(function () {
-              document.getElementById("album").style.opacity = 100;
-              document.getElementById("bgimg").style.opacity = 100;
+              clearInterval(intervalId);
+              document.getElementById("album").style.opacity = 0;
+              document.getElementById("bgimg").style.opacity = 0;
+              setTimeout(function () {
+                getCurrentSong(token)
+              }, 300)
+              setTimeout(function () {
+                document.getElementById("album").style.opacity = 100;
+                document.getElementById("bgimg").style.opacity = 100;
+              }, 500)
             }, 500)
           }
           else {
-            clearInterval(intervalId);
             setTimeout(function () {
-              getCurrentSong(token)
-            }, 300)
+              clearInterval(intervalId);
+              setTimeout(function () {
+                getCurrentSong(token)
+              }, 300)
+            }, 500)
           }
-
         }
       }, 10);
     } else {
@@ -1200,8 +1203,8 @@ function EN() {
 
                                 <h2>Known Bugs</h2>
 
-                                - New song information is sometimes not automatically updated when a song ends. Press the refresh button to reload the information. <br/>
-                                - Lyrics sometimes don't automatically get updated when the song switches. There's a refresh button in the lyrics tab to retry this. <br/>
+                                - New song information is sometimes not automatically updated when a song ends. Press the refresh button to reload the information. <br />
+                                - Lyrics sometimes don't automatically get updated when the song switches. There's a refresh button in the lyrics tab to retry this. <br />
                                 - If you had the Vinyl background selected prior to entering Quiz Mode, it will be reverted back to the normal background upon exit. You can manually
                                 fix this by tapping on the album cover.
 
@@ -1210,7 +1213,7 @@ function EN() {
                           )}
                         </Popup>
                         <span className='smallseperator' />
-                        <button className='popupbtn' id="reloadbtn" title="Log Out With Spotify" onClick={() => { refresh(); disablereload() }}>Refresh</button>
+                        <button className='popupbtn' id="reloadbtn" title="Refresh Song Information" onClick={() => { refresh(); disablereload() }}>Refresh</button>
                       </>
                       :
                       <>
@@ -1308,7 +1311,7 @@ function EN() {
                                 <h2>Bekende Bugs</h2>
 
                                 - Informatie over het huidige lied wordt niet altijd automatisch opgehaald wanneer het vorige lied afloopt. Druk op de ververs knop om dit opnieuw te proberen. <br />
-                                - Song teksten worden soms niet geupdatet wanneer het lied wisselt. Hiervoor is ook een ververs knop. Deze is te vinden in het Song Teksten menu. <br/>
+                                - Song teksten worden soms niet geupdatet wanneer het lied wisselt. Hiervoor is ook een ververs knop. Deze is te vinden in het Song Teksten menu. <br />
                                 - Als je de Vinyl achtergrond geselecteerd had voordat je de Quiz Modus gaat spelen, wordt deze bij het stoppen van Quiz Modus terug gezet naar de normale achtergrond.
                                 Dit kan je zelf weer terug naar de Vinyl achtergrond zetten door op de album cover te drukken.
 
@@ -1317,7 +1320,7 @@ function EN() {
                           )}
                         </Popup>
                         <span className='smallseperator' />
-                        <button className='popupbtn' id="reloadbtn" title="Uitloggen Met Spotify" onClick={() => { refresh(); disablereload() }}>Verversen</button>
+                        <button className='popupbtn' id="reloadbtn" title="Muziek Informatie Verversen" onClick={() => { refresh(); disablereload() }}>Verversen</button>
                       </>
                     }
 
@@ -1364,7 +1367,7 @@ function EN() {
                 :
                 <div className='errorcontent'>
                   <h2>Oops, something went wrong.</h2>
-                  <p>Make sure that you have opened Spotify on this device and have a song already playing. 
+                  <p>Make sure that you have opened Spotify on this device and have a song already playing.
                     Also make sure you have a Spotify Premium subscription. <br /> <br />
                     Please refresh this page to try logging in again. <br /> <br />
                     If this problem persists, please try again later.
