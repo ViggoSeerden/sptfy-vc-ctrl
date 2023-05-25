@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/sptfy-vc-ctrl/static/css/main.2ded63be.css",
-    "main.js": "/sptfy-vc-ctrl/static/js/main.647f74ed.js",
+    "main.css": "/sptfy-vc-ctrl/static/css/main.74660ba0.css",
+    "main.js": "/sptfy-vc-ctrl/static/js/main.0ef3acce.js",
     "static/js/787.11a92364.chunk.js": "/sptfy-vc-ctrl/static/js/787.11a92364.chunk.js",
     "static/media/logo2.png": "/sptfy-vc-ctrl/static/media/logo2.4b99ca8d5c6dd05a28e4.png",
     "static/media/Roboto-Thin.ttf": "/sptfy-vc-ctrl/static/media/Roboto-Thin.a732a12eb07742232407.ttf",
@@ -9,12 +9,12 @@
     "static/media/Roboto-Light.ttf": "/sptfy-vc-ctrl/static/media/Roboto-Light.333da16a3f3cc391d087.ttf",
     "service-worker.js": "/sptfy-vc-ctrl/service-worker.js",
     "index.html": "/sptfy-vc-ctrl/index.html",
-    "main.2ded63be.css.map": "/sptfy-vc-ctrl/static/css/main.2ded63be.css.map",
-    "main.647f74ed.js.map": "/sptfy-vc-ctrl/static/js/main.647f74ed.js.map",
+    "main.74660ba0.css.map": "/sptfy-vc-ctrl/static/css/main.74660ba0.css.map",
+    "main.0ef3acce.js.map": "/sptfy-vc-ctrl/static/js/main.0ef3acce.js.map",
     "787.11a92364.chunk.js.map": "/sptfy-vc-ctrl/static/js/787.11a92364.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.2ded63be.css",
-    "static/js/main.647f74ed.js"
+    "static/css/main.74660ba0.css",
+    "static/js/main.0ef3acce.js"
   ]
 }
