@@ -126,6 +126,7 @@
   }
 }
 
+/* Landscape Phones */
 @media screen and ( max-height: 500px ) and (min-width: 600px) {
   #album {
     margin-left: 10vh;
@@ -171,12 +172,13 @@
     margin-bottom: -15vh;
   }
 
-  #bgimg {
+  .bgimg {
     margin-top: 10vh;
     margin-left: -10vw;
   }
 }
 
+/* Galaxy Fold */
 @media screen and ( max-height: 300px ) and (min-width: 600px) {
   #album {
     margin-left: 10vh;
@@ -218,9 +220,11 @@
   }
 }
 
+/* Galaxy Watch 4 44mm */
 @media screen and (max-height: 500px) and (max-width: 500px ){
   #album {
-    height: 32vh;
+    height: 25vh;
+    margin-top: 7vh;
   }
 
   .desc {
@@ -240,8 +244,30 @@
   .nologincontent {
     margin-left: 4%;
   }
+
+  .bgimg {
+    width: 50%;
+    height: 50%;
+    margin-top: 25vh;
+    margin-left: -30vw;
+  }
 }
 
+/* Galaxy Watch 4 40mm */
+@media screen and (max-height: 400px) and (max-width: 400px ){
+  #album {
+    margin-top: 3vh;
+  }
+
+  .bgimg {
+    width: 50%;
+    height: 50%;
+    margin-top: 25vh;
+    margin-left: -30vw;
+  }
+}
+
+/* Galaxy Fold Landscape */
 @media screen and (max-height: 500px) and (min-height: 499px) and (max-width: 654px ){
   .controls {
     top: 11vh;
@@ -253,6 +279,7 @@
   }
 }
 
+/* Desktop */
 @media screen and (min-width: 1200px){
   .modal {
     margin-left: 67vw;
@@ -261,7 +288,7 @@
   .modal>.commandcontent {
     max-width: 25vw;
   }
-  
+
   .modal>.lyricscontent {
     max-width: 25vw;
   }

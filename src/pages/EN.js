@@ -964,7 +964,7 @@ function EN() {
           <div className='nologincontent'>
             <img src={logo} alt="Logo" id="logo" className='logo' hidden /><br />
             <p className='title fadein' id="title">Broadway</p>
-            <p className='desc fadein' id="desc">Spotify Voice Controller (V3.01)</p>
+            <p className='desc fadein' id="desc">Web-Based Spotify Controller (V3.03)</p>
             <a
               className="btn btn--loginApp-link fadein"
               href={`${authEndpoint}client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
@@ -1012,7 +1012,7 @@ function EN() {
                     </div>
                     :
                     <div className='album fadein' title="Switch Background" id="album">
-                      <h1>Quiz <br /> Mode</h1>
+                      <h1>Quiz<br />Mode</h1>
                     </div>
                   }
                   <div className='controls fadein'>
