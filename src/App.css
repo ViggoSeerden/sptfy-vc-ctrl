@@ -38,6 +38,40 @@
   border-radius: 50%;
 }
 
+.audio-visualizer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: -50;
+  filter: brightness(20%);
+  margin-left: 45%;
+}
+
+.audio-visualizer-animation {
+  animation: scroll linear infinite;
+  animation-delay: 5s;
+}
+
+.line {
+  height: 150vh;
+  width: 0.5vw;
+  background-color: white;
+  z-index: -25;
+  position: fixed;
+  filter: brightness(25%);
+  margin-left: 49.5%;
+  border: black 0.5px solid
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%); /* Adjust the percentage based on the desired scrolling effect */
+  }
+}
+
 @keyframes rotation {
   from {
     transform: rotate(0deg);
@@ -59,7 +93,7 @@
   justify-content: space-around;
   align-items: center;
   padding-inline: 25px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .audio-progress-bar {
@@ -175,6 +209,15 @@
   .bgimg {
     margin-top: 10vh;
     margin-left: -10vw;
+  }
+
+  .audio-visualizer {
+    padding-left: 50%;
+    margin-bottom: -10vh;
+  }
+
+  .line {
+    margin-left: 47vw;
   }
 }
 
@@ -552,6 +595,7 @@ body {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2px;
+  margin-top: 10px;
 }
 
 .select:hover {

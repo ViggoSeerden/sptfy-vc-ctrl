@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import React from 'react'
 import logo from './photos/logo2.png'
 import spotify from './photos/spotify.png'
 import './css/broadway.css'
-// import { start, stop } from './timerworker';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faMicrophone, faLanguage, faVolumeHigh, faQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faPause, faForward, faBackward, faShuffle, faRepeat, faMicrophone, faLanguage, faVolumeHigh, faChartSimple } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import NoSleep from 'nosleep.js';
 import Popup from 'reactjs-popup';
 import { useSwipeable } from 'react-swipeable';
-// import englishcommands from './audio/englishcommands.mp3'
-// import dutchcommands from './audio/dutchcommands.mp3'
+import AudioVisualizer from './components/AudioVisualizer'
 
 const nosleep = new NoSleep();
 nosleep.enable();
@@ -20,6 +18,15 @@ const LANGUAGE_MAP = {
   'Engels': 'en-US',
   'Dutch': 'nl-NL'
 }
+
+//Version 4
+//Additions
+//Queue
+//Recommended
+//Progress Bar Positions
+//Changes
+//Bug Fixes
+//Layout Changes
 
 function EN() {
   // let installPrompt; //Variable to store the install action in
@@ -95,10 +102,16 @@ function EN() {
   let [synced, setSynced] = useState(false);
   let [lyricsfound, setFound] = useState(false);
 
+  let [features, setFeatures] = useState();
+  let [analysis, setAnalysis] = useState();
+
+  let [queue, setQueue] = useState([]);
+  let [recommended, setRecommended] = useState([]);
+
   const [time, setTime] = useState(0);
+  const [bartime, setBarTime] = useState(0);
   const [running, setRunning] = useState(false);
   const [duration, setDuration] = useState();
-
   const [progressWidth, setProgressWidth] = useState(0);
 
   const [shuffle, setShuffle] = useState();
@@ -110,6 +123,7 @@ function EN() {
   const [microphone, setMicrophoneP] = useState("Off");
   const [volume, setVolumeP] = useState(100);
   const [bg, setBG] = useState("normal");
+  const [vis, setVis] = useState("Off");
 
   const [mode, setMode] = useState("normal");
   let [score, setScore] = useState(0);
@@ -118,6 +132,8 @@ function EN() {
   let [titleinput, setTitle] = useState("");
   let [artistinput, setArtist] = useState("");
   let [albuminput, setAlbum] = useState("");
+
+  const audioVisualizerRef = useRef(null);
 
   function checkAnswer() {
     let tempscore = score
@@ -206,46 +222,68 @@ function EN() {
 
 
 
+  const [songEnded, setSongEnded] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [minutes, setMinutes] = useState(0);
+
+  // ...
+
   useEffect(() => {
     let intervalId;
-    let startTime = performance.now() - time;
+    let startTime = performance.now() - bartime;
 
     if (running) {
       intervalId = setInterval(() => {
         const elapsedTime = performance.now() - startTime;
         setTime(Math.floor(elapsedTime));
+        setBarTime(Math.floor(elapsedTime));
 
         if (elapsedTime >= duration) {
-          if (songrepeat === false) {
-            setTimeout(function () {
-              clearInterval(intervalId);
-              document.getElementById("album").style.opacity = 0;
-              document.getElementById("bgimg").style.opacity = 0;
-              setTimeout(function () {
-                getCurrentSong(token)
-              }, 300)
-              setTimeout(function () {
-                document.getElementById("album").style.opacity = 100;
-                document.getElementById("bgimg").style.opacity = 100;
-              }, 500)
-            }, 500)
-          }
-          else {
-            setTimeout(function () {
-              clearInterval(intervalId);
-              setTimeout(function () {
-                getCurrentSong(token)
-              }, 300)
-            }, 500)
+          clearInterval(intervalId); // Clear the interval immediately
+
+          if (!songEnded) {
+            setSongEnded(true);
+            if (songrepeat === false) {
+              setTimeout(() => {
+                document.getElementById("album").style.opacity = 0;
+                document.getElementById("bgimg").style.opacity = 0;
+                setTimeout(() => {
+                  getCurrentSong(token);
+                  setBarTime(0);
+                  setSongEnded(false); // Reset songEnded state
+                }, 300);
+                setTimeout(() => {
+                  document.getElementById("album").style.opacity = 100;
+                  document.getElementById("bgimg").style.opacity = 100;
+                }, 500);
+              }, 500);
+            } else {
+              setTimeout(() => {
+                getCurrentSong(token);
+                setSongEnded(false); // Reset songEnded state
+              }, 300);
+            }
           }
         }
-      }, 10);
-    } else {
-      clearInterval(intervalId);
+
+        // Calculate minutes and seconds based on elapsed seconds
+        const elapsedSeconds = Math.floor(elapsedTime / 1000);
+        const newMinutes = Math.floor(elapsedSeconds / 60);
+        const newSeconds = elapsedSeconds % 60;
+
+        setMinutes(newMinutes);
+        setSeconds(newSeconds);
+      }, 1000);
     }
 
     return () => clearInterval(intervalId);
-  }, [running, duration]);
+  }, [running, duration, bartime, songrepeat, songEnded]);
+
+
+  useEffect(() => {
+    const newProgressWidth = (bartime / duration) * 100;
+    setProgressWidth(newProgressWidth);
+  }, [bartime, duration]);
 
   useEffect(() => {
     const hash = window.location.hash
@@ -277,6 +315,7 @@ function EN() {
       }
       if (localStorage.getItem("mic")) {
         setMicrophoneP(localStorage.getItem("mic"))
+        setMicrophone();
       }
       else {
         localStorage.setItem("mic", "Off")
@@ -292,6 +331,12 @@ function EN() {
       }
       else {
         localStorage.setItem("highscore", 0)
+      }
+      if (localStorage.getItem("vis")) {
+        setVis(localStorage.getItem("vis"))
+      }
+      else {
+        localStorage.setItem("vis", "Off")
       }
       getCurrentSong(_token)
       InitBG()
@@ -310,12 +355,6 @@ function EN() {
     document.body.style.backgroundPosition = "center";
     document.body.style.backgroundAttachment = "fixed";
   }
-
-  useEffect(() => {
-    const newProgressWidth = (time / duration) * 100;
-    setProgressWidth(newProgressWidth);
-  }, [time, duration]);
-
 
   useEffect(() => {
     if (token) {
@@ -349,7 +388,9 @@ function EN() {
           item: data.item,
         });
         setTime(data.progress_ms)
-        setDuration(data.item.duration_ms + 500)
+        setBarTime(data.progress_ms)
+
+        setDuration(data.item.duration_ms)
         setRunning(data.is_playing)
         setShuffle(data.shuffle_state)
         if (data.replay_state === "off") {
@@ -363,6 +404,16 @@ function EN() {
         }
 
         getLyrics(data)
+        getQueue(token)
+        getAnalysis(data, token)
+        getFeatures(data, token)
+        getRecommended(data, token)
+
+        setTimeout(function () {
+          audioVisualizerRef.current.restartAnimation(data.progress_ms / 1000);
+        }, 500)
+
+
         if (mode === "normal") {
           if (currentBG === "normal") {
             document.body.style.backgroundImage = "url(" + data.item.album.images[0].url + ")";
@@ -376,6 +427,67 @@ function EN() {
         }
       })
       .catch(error => console.error('Error fetching current song:', error))
+  }
+
+  async function getAnalysis(song, token) {
+    await fetch("https://api.spotify.com/v1/audio-analysis/" + song.item.id, {
+      method: 'GET',
+      headers: {
+        Authorization: "Bearer " + token,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
+      .then(data => {
+        setAnalysis(data)
+        //console.log(data.segments[0].pitches)
+      }
+      )
+  }
+
+  async function getFeatures(song, token) {
+    await fetch("https://api.spotify.com/v1/audio-features/" + song.item.id, {
+      method: 'GET',
+      headers: {
+        Authorization: "Bearer " + token,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
+      .then(data => {
+        setFeatures(data)
+      }
+      )
+  }
+
+  async function getRecommended(song, token) {
+    await fetch("https://api.spotify.com/v1/recommendations?seed_artists=" + song.item.artists[0].id + "&seed_tracks=" + song.item.id + "&limit=" + 20, {
+      method: 'GET',
+      headers: {
+        Authorization: "Bearer " + token,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
+      .then(data => {
+        setRecommended(data.tracks)
+      }
+      )
+  }
+
+  async function getQueue(token) {
+    await fetch("https://api.spotify.com/v1/me/player/queue", {
+      method: 'GET',
+      headers: {
+        Authorization: "Bearer " + token,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
+      .then(data => {
+        setQueue(data.queue)
+      }
+      )
   }
 
   useEffect(() => {
@@ -424,7 +536,7 @@ function EN() {
       .catch(error => console.error('Error changing song:', error));
 
     await sleep(500)
-    if (songrepeat === false && mode === "normal") {
+    if (mode === "normal") {
       document.getElementById("album").style.opacity = 0;
       document.getElementById("bgimg").style.opacity = 0;
       setTimeout(function () {
@@ -473,19 +585,15 @@ function EN() {
 
     await sleep(500)
 
-    if (songrepeat === false) {
-      document.getElementById("album").style.opacity = 0;
-      document.getElementById("bgimg").style.opacity = 0;
-
-      setTimeout(function () {
-        document.getElementById("album").style.opacity = 100;
-        document.getElementById("bgimg").style.opacity = 100;
-      }, 500)
-    } else {
-      setTimeout(function () {
-        getCurrentSong(token)
-      }, 300)
-    }
+    document.getElementById("album").style.opacity = 0;
+    document.getElementById("bgimg").style.opacity = 0;
+    setTimeout(function () {
+      getCurrentSong(token)
+    }, 300)
+    setTimeout(function () {
+      document.getElementById("album").style.opacity = 100;
+      document.getElementById("bgimg").style.opacity = 100;
+    }, 500)
   }
 
   const toggleShuffle = async (mode) => {
@@ -907,6 +1015,18 @@ function EN() {
     });
   }
 
+  function toggleVis() {
+    setVis((prevVis) => {
+      if (prevVis === "Off") {
+        localStorage.setItem("vis", "On")
+        return "On";
+      } else if (prevVis === "On") {
+        localStorage.setItem("vis", "Off")
+        return "Off";
+      }
+    });
+  }
+
   function toggleQuiz() {
     setMode((prevMode) => {
       if (prevMode === "normal") {
@@ -938,6 +1058,20 @@ function EN() {
       }
     });
   }
+
+  const handleClick = async (event) => {
+    const containerWidth = event.currentTarget.offsetWidth;
+    const clickPosition = event.nativeEvent.offsetX;
+    const newTime = (clickPosition / containerWidth) * duration;
+    setBarTime(Math.floor(newTime))
+    audioVisualizerRef.current.restartAnimation(Math.floor(newTime) / 1000);
+    await fetch("https://api.spotify.com/v1/me/player/seek?position_ms=" + Math.floor(newTime), {
+      method: 'PUT',
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    })
+  };
 
   return (
     <div id="bgimagediv">
@@ -995,8 +1129,10 @@ function EN() {
                       </div>
                       :
                       running ?
-                        <div id='bgimg' className='bgimg'>
-                          <img src={currSong.item.album.images[0].url} alt="oops" className='bgalbum'></img>
+                        <div>
+                          <div id='bgimg' className='bgimg'>
+                            <img src={currSong.item.album.images[0].url} alt="oops" className='bgalbum'></img>
+                          </div>
                         </div>
                         :
                         <div id='bgimg' className='bgimg' style={{ animationPlayState: 'paused' }}>
@@ -1006,6 +1142,14 @@ function EN() {
                     <div id='bgimg' className='bgimg' hidden>
                     </div>
                   }
+                  <div>
+                    {vis === "On" && analysis &&
+                      <div>
+                        <div className='line'/>
+                        <AudioVisualizer ref={audioVisualizerRef} segments={analysis.segments} currentTime={time} duration={duration} />
+                      </div>
+                    }
+                  </div>
                   {mode === "normal" ?
                     <div className='album fadein' title="Switch Background" id="album" {...handlers} onClick={toggleBG}>
                       <img src={currSong.item.album.images[0].url} alt="Album Cover" id="albumcover" className="albumcover" />
@@ -1037,12 +1181,12 @@ function EN() {
                     <br />
                     {mode === "normal" &&
                       <div className="audio-progress-bar-container">
-                        <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:{("0" + Math.floor((time / 1000) % 60)).slice(-2)}</span>
-                        <div className="audio-progress-bar">
+                        <span>{("0" + minutes).slice(-2)}:{("0" + seconds).slice(-2)}</span>
+                        <div className="audio-progress-bar" onClick={handleClick}>
                           <div className="progress-bar-background" />
                           <div className="progress-bar" style={{ width: `${progressWidth}%` }} />
                         </div>
-                        <span>{("0" + Math.floor((duration / 60000) % 60)).slice(-2)}:{("0" + Math.floor(((duration - 500) / 1000) % 60)).slice(-2)}</span>
+                        <span>{("0" + Math.floor((duration / 60000) % 60)).slice(-2)}:{("0" + Math.floor(((duration) / 1000) % 60)).slice(-2)}</span>
                       </div>
                     }
                     <div>
@@ -1065,8 +1209,43 @@ function EN() {
                         :
                         <button id="repeat" className="controlbtn" title="Enable Repeat" onClick={() => toggleRepeat(true)}><FontAwesomeIcon icon={faRepeat} color="white" /></button>
                       }
+
+                      <br />
+
+                      <button id="reloadbtn" className='popupbtn' title="Refresh Song Info" onClick={() => { refresh(); disablereload() }}>Refresh</button>
+                      <span className='smallseperator'></span>
+                      <Popup trigger={<button className="popupbtn" title="View Queue" id="lyricbtn">Queue</button>} modal nested>
+                        {close => (
+                          <div className="modal">
+                            <button className="close" id="closebtn" onClick={close}>
+                              &times;
+                            </button>
+                            <div className='header'>Queue</div>
+                            <div className="lyricscontent">
+                              <p>
+                                {queue.map((song, index) => (
+                                  <React.Fragment key={index}>
+                                    <span>
+                                      <a target="_blank" rel="noreferrer" href={song.external_urls.spotify} style={{ fontWeight: 'bolder', color: "white", paddingBottom: "2px", lineClamp: 1 }}>{index + 1}. {song.name}</a> <br />
+                                      <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.artists[0].external_urls.spotify}>{song.artists[0].name}</a> <br />
+                                      <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.album.external_urls.spotify}>{song.album.name}</a> <br />
+                                    </span>
+                                    <br /> {/* Add line break after each line */}
+                                  </React.Fragment>
+                                ))}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </Popup>
+
+                      <span className='smallseperator'></span>
+                      {mode === "normal" ?
+                        <button id="repeat" className="popupbtn" title="Play Quiz Mode" onClick={() => toggleQuiz()}>Quiz Mode</button>
+                        :
+                        <button id="repeat" className="popupbtn" title="Quit Playing Quiz Mode" onClick={() => toggleQuiz()}>Normal Mode</button>
+                      }
                     </div>
-                    <br />
                     <div className='miscsettings'>
                       <span className='seperator'>
                         <FontAwesomeIcon className='miscoption' icon={faLanguage} />
@@ -1075,9 +1254,6 @@ function EN() {
                           <option value="nl-NL">NL</option>
                         </select>
                       </span>
-                      {window.screen.width < 300 &&
-                        <br />
-                      }
                       <span className='smallseperator'>
                         <FontAwesomeIcon className='miscoption' icon={faVolumeHigh} />
                         <select className='select' defaultValue={volume} title="Set Volume Level" onChange={(val) => setVolume(val.target.value)}>
@@ -1102,8 +1278,8 @@ function EN() {
                         </select>
                       </span>
                       <span className='smallseperator'>
-                        <FontAwesomeIcon className='miscoption' icon={faQuestion} />
-                        <select className='select' defaultValue="Off" title="Toggle Quiz Mode" onChange={toggleQuiz}>
+                        <FontAwesomeIcon className='miscoption' icon={faChartSimple} />
+                        <select className='select' defaultValue={vis} title="Toggle Visualizer" id="vis" onChange={(val) => toggleVis(val.target.value)}>
                           <option value="Off">Off</option>
                           <option value="On">On</option>
                         </select>
@@ -1213,7 +1389,30 @@ function EN() {
                           )}
                         </Popup>
                         <span className='smallseperator' />
-                        <button className='popupbtn' id="reloadbtn" title="Refresh Song Information" onClick={() => { refresh(); disablereload() }}>Refresh</button>
+                        <Popup trigger={<button className="popupbtn" title="View Recommended Songs Based on Current Song" id="lyricbtn">Suggestions</button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              <div className='header'>Suggestions</div>
+                              <div className="lyricscontent">
+                                <p>
+                                  {recommended.map((song, index) => (
+                                    <React.Fragment key={index}>
+                                      <span>
+                                        <a target="_blank" rel="noreferrer" href={song.external_urls.spotify} style={{ fontWeight: 'bolder', color: "white", paddingBottom: "2px", lineClamp: 1 }}>{index + 1}. {song.name}</a> <br />
+                                        <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.artists[0].external_urls.spotify}>{song.artists[0].name}</a> <br />
+                                        <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.album.external_urls.spotify}>{song.album.name}</a> <br />
+                                      </span>
+                                      <br /> {/* Add line break after each line */}
+                                    </React.Fragment>
+                                  ))}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
                       </>
                       :
                       <>
@@ -1320,7 +1519,30 @@ function EN() {
                           )}
                         </Popup>
                         <span className='smallseperator' />
-                        <button className='popupbtn' id="reloadbtn" title="Muziek Informatie Verversen" onClick={() => { refresh(); disablereload() }}>Verversen</button>
+                        <Popup trigger={<button className="popupbtn" title="Aanbevolen Nummers Gebaseerd op Huidige Nummer" id="lyricbtn">Aanbevolen</button>} modal nested>
+                          {close => (
+                            <div className="modal">
+                              <button className="close" id="closebtn" onClick={close}>
+                                &times;
+                              </button>
+                              <div className='header'>Aanbevolen</div>
+                              <div className="lyricscontent">
+                                <p>
+                                  {recommended.map((song, index) => (
+                                    <React.Fragment key={index}>
+                                      <span>
+                                        <a target="_blank" rel="noreferrer" href={song.external_urls.spotify} style={{ fontWeight: 'bolder', color: "white", paddingBottom: "2px", lineClamp: 1 }}>{index + 1}. {song.name}</a> <br />
+                                        <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.artists[0].external_urls.spotify}>{song.artists[0].name}</a> <br />
+                                        <a target="_blank" rel="noreferrer" style={{ color: "white" }} href={song.album.external_urls.spotify}>{song.album.name}</a> <br />
+                                      </span>
+                                      <br /> {/* Add line break after each line */}
+                                    </React.Fragment>
+                                  ))}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </Popup>
                       </>
                     }
 
