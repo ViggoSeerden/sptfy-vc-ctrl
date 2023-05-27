@@ -8,6 +8,20 @@ Improved and expanded upon version of what was once just a simple school project
 
 # Changelog
 
+## Version 4
+### Additions
+  - Queue
+  - Recommended Songs
+  - Audio Visualisation
+  - Interactive Progress Bar
+
+### Changes
+  - Layout Changes
+  - Bug Fixes
+
+### Removals
+  - Removed Herobrine
+
 ## Version 3
 ### Additions
   - Quiz Mode
