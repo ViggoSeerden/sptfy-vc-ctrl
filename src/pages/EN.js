@@ -87,8 +87,8 @@ function EN() {
   const authEndpoint = "https://accounts.spotify.com/authorize/?"
 
   const clientId = "c12a19b4c59744a797e50a4c058b753e"
-  //const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
-  const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
+  const redirectUri = "https://viggoseerden.github.io/sptfy-vc-ctrl"
+  //const redirectUri = "http://localhost:3000/sptfy-vc-ctrl"
 
   const scopes = [
     'user-read-currently-playing',
@@ -1098,7 +1098,7 @@ function EN() {
           <div className='nologincontent'>
             <img src={logo} alt="Logo" id="logo" className='logo' hidden /><br />
             <p className='title fadein' id="title">Broadway</p>
-            <p className='desc fadein' id="desc">Web-Based Spotify Controller (V3.03)</p>
+            <p className='desc fadein' id="desc">Web-Based Spotify Controller (V4.0)</p>
             <a
               className="btn btn--loginApp-link fadein"
               href={`${authEndpoint}client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
